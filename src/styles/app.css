@@ -1,0 +1,22 @@
+/* ── 全局重置 ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #1c1c1c;
+  color: #e0e0e0;
+  font-family: "Segoe UI", "PingFang SC", sans-serif;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+#app {
+  display: flex;
+  justify-content: center;
+}
