@@ -16,14 +16,38 @@ struct Dir {
 }
 
 const DIRECTIONS: [Dir; 8] = [
-    Dir { shift: 1, mask: !FILE_H },
-    Dir { shift: -1, mask: !FILE_A },
-    Dir { shift: 8, mask: !RANK_8 },
-    Dir { shift: -8, mask: !RANK_1 },
-    Dir { shift: 9, mask: !(FILE_H | RANK_8) },
-    Dir { shift: 7, mask: !(FILE_A | RANK_8) },
-    Dir { shift: -7, mask: !(FILE_H | RANK_1) },
-    Dir { shift: -9, mask: !(FILE_A | RANK_1) },
+    Dir {
+        shift: 1,
+        mask: !FILE_H,
+    },
+    Dir {
+        shift: -1,
+        mask: !FILE_A,
+    },
+    Dir {
+        shift: 8,
+        mask: !RANK_8,
+    },
+    Dir {
+        shift: -8,
+        mask: !RANK_1,
+    },
+    Dir {
+        shift: 9,
+        mask: !(FILE_H | RANK_8),
+    },
+    Dir {
+        shift: 7,
+        mask: !(FILE_A | RANK_8),
+    },
+    Dir {
+        shift: -7,
+        mask: !(FILE_H | RANK_1),
+    },
+    Dir {
+        shift: -9,
+        mask: !(FILE_A | RANK_1),
+    },
 ];
 
 // ---------- 安全位移 ----------
@@ -56,9 +80,9 @@ fn flip_one_dir(pos: Bitboard, own: Bitboard, opponent: Bitboard, dir: &Dir) -> 
 /// 计算在 `pos` 落子后，会翻转的对方棋子 bitboard
 pub fn compute_flips(pos: Bitboard, own: Bitboard, opponent: Bitboard) -> Bitboard {
     let mut total = 0;
-    for dir in DIRECTIONS.iter() {
-        total |= flip_one_dir(pos, own, opponent, dir);
-    }
+    DIRECTIONS
+        .iter()
+        .for_each(|dir| total |= flip_one_dir(pos, own, opponent, dir));
     total
 }
 
@@ -110,6 +134,17 @@ pub fn make_move(player: &mut Bitboard, opponent: &mut Bitboard, pos: Bitboard) 
     *opponent ^= flips;
 }
 
+/// 使用预计算的 flips 执行落子，避免重复计算
+pub fn make_move_with_flips(
+    player: &mut Bitboard,
+    opponent: &mut Bitboard,
+    pos: Bitboard,
+    flips: Bitboard,
+) {
+    *player ^= pos | flips;
+    *opponent ^= flips;
+}
+
 // ---------- 辅助函数 ----------
 /// 将棋盘坐标转为 bitboard（例如 `sq('d', 5)` → d5 对应的位）
 pub fn sq(file: char, rank: u8) -> Bitboard {
@@ -145,11 +180,6 @@ pub fn judge_winner(black: Bitboard, white: Bitboard) -> GameResult {
         std::cmp::Ordering::Less => GameResult::WhiteWin(bc, wc),
         std::cmp::Ordering::Equal => GameResult::Draw(bc),
     }
-}
-
-/// 判断游戏是否结束（双方均无合法落子）
-pub fn is_game_over(black: Bitboard, white: Bitboard) -> bool {
-    !has_legal_move(black, white) && !has_legal_move(white, black)
 }
 
 /// 初始棋盘

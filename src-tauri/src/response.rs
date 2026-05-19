@@ -15,6 +15,8 @@ pub struct GameStateResponse {
     pub winner: Option<String>,
     /// 本次落子翻转的棋子位板（以字符串形式传递）
     pub flips: String,
+    /// AI 落子位置索引（仅 ai_move 命令使用）
+    pub ai_move_index: Option<u32>,
 }
 
 impl GameStateResponse {
@@ -30,8 +32,14 @@ impl GameStateResponse {
             (white, black)
         };
 
+        // 计算当前方合法落子；同时判断游戏是否结束（避免重复调用 is_game_over）
         let legal = game_logic::compute_legal_moves(player, opponent);
-        let game_over = game_logic::is_game_over(black, white);
+        let game_over = if legal != 0 {
+            false // 当前方有合法落子 → 游戏继续
+        } else {
+            // 当前方无合法落子 → 检查对方是否也无合法落子
+            !game_logic::has_legal_move(opponent, player)
+        };
 
         let (winner, over) = if game_over {
             let result = game_logic::judge_winner(black, white);
@@ -55,6 +63,7 @@ impl GameStateResponse {
             white_score: white.count_ones(),
             winner,
             flips: flips.to_string(),
+            ai_move_index: None,
         }
     }
 }

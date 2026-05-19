@@ -1,4 +1,4 @@
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
 // ── 类型 ──────────────────────────────────────────
@@ -12,6 +12,7 @@ export interface GameState {
   white_score: number;
   winner: string | null;
   flips: string;
+  ai_move_index: number | null;
 }
 
 interface FlipAnimation {
@@ -36,6 +37,12 @@ function bb(s: string): bigint {
   } catch {
     return 0n;
   }
+}
+
+/** 回放用的走法记录 */
+export interface MoveRecord {
+  pos_index: number;
+  is_black_turn: boolean;
 }
 
 /** 判断 bitboard 中第 index 位（0=a1 … 63=h8）是否为 1 */
@@ -217,6 +224,15 @@ export function useOthello() {
   const flipAnim = ref<FlipAnimation | null>(null);
   let animFrameId: number | null = null;
 
+  // ── 回放状态 ──
+  const isReplaying = ref(false);
+  const replayingGameId = ref<number | null>(null);
+  let replayTimerId: ReturnType<typeof setTimeout> | null = null;
+
+  // ── 走法记录（用于保存对局）──
+  const moveHistory: MoveRecord[] = [];
+  let currentGameSaved = false;
+
   const canvasRef = ref<HTMLCanvasElement | null>(null);
 
   // ── 棋盘绘制 ──
@@ -367,6 +383,8 @@ export function useOthello() {
       animFrameId = null;
     }
     flipAnim.value = null;
+    moveHistory.length = 0;
+    currentGameSaved = false;
 
     try {
       const res = await invoke<GameState>("start_game");
@@ -392,7 +410,6 @@ export function useOthello() {
     if (col < 0 || col > 7 || row < 0 || row > 7) return;
 
     const bitIndex = cellBitIndex(row, col);
-    if (!hasBit(legalMoves.value, bitIndex)) return;
 
     const preBlack = bb(black.value);
     const preWhite = bb(white.value);
@@ -405,6 +422,12 @@ export function useOthello() {
         white: white.value,
         posIndex: bitIndex,
         isBlackTurn: currentTurn.value === "black",
+      });
+
+      // 记录走法
+      moveHistory.push({
+        pos_index: bitIndex,
+        is_black_turn: currentTurn.value === "black",
       });
 
       const flipsBB = bb(res.flips);
@@ -430,6 +453,202 @@ export function useOthello() {
     }
   }
 
+  // ── AI 落子 ──
+  const isAiThinking = ref(false);
+  /** 当前人类玩家执子方 */
+  const playerSide = ref<"black" | "white">("black");
+
+  async function requestAiMove(): Promise<boolean> {
+    if (gameOver.value || flipAnim.value || isAiThinking.value) return false;
+
+    isAiThinking.value = true;
+    errorMsg.value = "";
+
+    const preBlack = bb(black.value);
+    const preWhite = bb(white.value);
+    const aiSide: "black" | "white" =
+      currentTurn.value === "black" ? "black" : "white";
+    const flipFrom: "black" | "white" = aiSide === "black" ? "white" : "black";
+
+    try {
+      const res = await invoke<GameState>("ai_move", {
+        black: black.value,
+        white: white.value,
+        isBlackTurn: currentTurn.value === "black",
+      });
+
+      // AI 无合法落子（pass）或正常落子
+      if (res.ai_move_index === null || res.ai_move_index === undefined) {
+        // AI pass，直接应用状态（无翻转动画）
+        applyState(res);
+        isAiThinking.value = false;
+        return true;
+      }
+
+      moveHistory.push({
+        pos_index: res.ai_move_index,
+        is_black_turn: currentTurn.value === "black",
+      });
+
+      const flipsBB = bb(res.flips);
+      if (flipsBB === 0n) {
+        applyState(res);
+        isAiThinking.value = false;
+        return true;
+      }
+
+      flipAnim.value = {
+        progress: 0,
+        flipBits: flipsBB,
+        flipFrom,
+        newPieceSide: aiSide,
+        newPieceIdx: res.ai_move_index,
+        preBlack,
+        preWhite,
+      };
+
+      drawBoard();
+      startFlipAnimation(flipAnim.value, res);
+      isAiThinking.value = false;
+      return true;
+    } catch (e) {
+      errorMsg.value = `AI 落子失败: ${e}`;
+      isAiThinking.value = false;
+      return false;
+    }
+  }
+
+  // ── 回放功能 ──
+  async function replayGame(moves: MoveRecord[], gameId: number) {
+    // 停止之前的回放
+    stopReplay();
+
+    // 先重置棋盘
+    await startGame();
+    isReplaying.value = true;
+    replayingGameId.value = gameId;
+
+    let moveIndex = 0;
+
+    async function playNext() {
+      if (!isReplaying.value) return;
+      if (moveIndex >= moves.length) {
+        // 回放完毕
+        stopReplay();
+        return;
+      }
+      if (gameOver.value) {
+        stopReplay();
+        return;
+      }
+
+      const m = moves[moveIndex];
+      moveIndex++;
+
+      // 检查是否需要跳过（当前回合无人可走时会自动跳过，但这里直接按记录走）
+      const preBlack = bb(black.value);
+      const preWhite = bb(white.value);
+      const flipFrom: "black" | "white" = m.is_black_turn ? "white" : "black";
+      const newPieceSide: "black" | "white" = m.is_black_turn ? "black" : "white";
+
+      try {
+        const res = await invoke<GameState>("make_move", {
+          black: black.value,
+          white: white.value,
+          posIndex: m.pos_index,
+          isBlackTurn: m.is_black_turn,
+        });
+
+        const flipsBB = bb(res.flips);
+        if (flipsBB === 0n) {
+          applyState(res);
+        } else {
+          flipAnim.value = {
+            progress: 0,
+            flipBits: flipsBB,
+            flipFrom,
+            newPieceSide,
+            newPieceIdx: m.pos_index,
+            preBlack,
+            preWhite,
+          };
+          drawBoard();
+
+          // 等待动画完成
+          await new Promise<void>((resolve) => {
+            const duration = 420;
+            const startTime = performance.now();
+
+            function frame(now: number) {
+              if (!isReplaying.value) { resolve(); return; }
+              const elapsed = now - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              flipAnim.value!.progress = progress;
+              drawBoard();
+
+              if (progress < 1) {
+                animFrameId = requestAnimationFrame(frame);
+              } else {
+                flipAnim.value = null;
+                animFrameId = null;
+                applyState(res);
+                resolve();
+              }
+            }
+            animFrameId = requestAnimationFrame(frame);
+          });
+        }
+
+        // 下一手延迟
+        if (isReplaying.value && !gameOver.value) {
+          replayTimerId = setTimeout(() => playNext(), 600);
+        }
+      } catch (e) {
+        errorMsg.value = `回放出错: ${e}`;
+        stopReplay();
+      }
+    }
+
+    // 延迟开始第一手
+    replayTimerId = setTimeout(() => playNext(), 500);
+  }
+
+  function stopReplay() {
+    isReplaying.value = false;
+    replayingGameId.value = null;
+    if (replayTimerId !== null) {
+      clearTimeout(replayTimerId);
+      replayTimerId = null;
+    }
+    if (animFrameId !== null) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+    flipAnim.value = null;
+  }
+
+  // ── 保存当前对局 ──
+  async function saveCurrentGame(): Promise<boolean> {
+    if (currentGameSaved) return false;
+    if (moveHistory.length === 0) return false;
+    if (!gameOver.value) return false;
+
+    currentGameSaved = true;
+    try {
+      await invoke("save_game", {
+        blackScore: blackScore.value,
+        whiteScore: whiteScore.value,
+        winner: winner.value,
+        moves: moveHistory,
+      });
+      return true;
+    } catch (e) {
+      console.error("保存对局失败:", e);
+      currentGameSaved = false;
+      return false;
+    }
+  }
+
   // ── UI 辅助 ──
   function turnLabel(): string {
     return currentTurn.value === "black" ? "⚫ 黑方" : "⚪ 白方";
@@ -448,6 +667,10 @@ export function useOthello() {
     await startGame();
   });
 
+  onUnmounted(() => {
+    stopReplay();
+  });
+
   // ── 导出 ──
   return {
     // 状态
@@ -462,10 +685,19 @@ export function useOthello() {
     errorMsg,
     flipAnim,
     canvasRef,
+    isReplaying,
+    replayingGameId,
+    isAiThinking,
+    playerSide,
     // 方法
     startGame,
     handleClick,
+    requestAiMove,
     turnLabel,
     winnerLabel,
+    replayGame,
+    stopReplay,
+    saveCurrentGame,
+    drawBoard,
   };
 }
