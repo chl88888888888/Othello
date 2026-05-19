@@ -7,16 +7,19 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+}
+
 body {
   background: #1c1c1c;
   color: #e0e0e0;
   font-family: "Segoe UI", "PingFang SC", sans-serif;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
 }
 
 #app {
+  min-height: 100vh;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
 }

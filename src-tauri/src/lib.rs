@@ -9,7 +9,7 @@ use response::GameStateResponse;
 #[tauri::command]
 fn start_game() -> GameStateResponse {
     let (black, white) = game_logic::initial_board();
-    response::build_response(black, white, "black", 0)
+    GameStateResponse::build_response(black, white, "black", 0)
 }
 
 #[tauri::command]
@@ -54,15 +54,15 @@ fn make_move(
     };
 
     if game_logic::has_legal_move(next_player, next_opponent) {
-        Ok(response::build_response(black_bb, white_bb, next_turn, flips))
+        Ok(GameStateResponse::build_response(black_bb, white_bb, next_turn, flips))
     } else if game_logic::has_legal_move(next_opponent, next_player) {
         // 对方无合法落子，回合交还当前方
         let current = if is_black_turn { "black" } else { "white" };
-        Ok(response::build_response(black_bb, white_bb, current, flips))
+        Ok(GameStateResponse::build_response(black_bb, white_bb, current, flips))
     } else {
         // 双方均无合法落子 → 游戏结束
         let last_turn = if is_black_turn { "black" } else { "white" };
-        Ok(response::build_response(black_bb, white_bb, last_turn, flips))
+        Ok(GameStateResponse::build_response(black_bb, white_bb, last_turn, flips))
     }
 }
 

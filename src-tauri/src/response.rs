@@ -17,42 +17,44 @@ pub struct GameStateResponse {
     pub flips: String,
 }
 
-pub fn build_response(
-    black: Bitboard,
-    white: Bitboard,
-    current_turn: &str,
-    flips: Bitboard,
-) -> GameStateResponse {
-    let (player, opponent) = if current_turn == "black" {
-        (black, white)
-    } else {
-        (white, black)
-    };
-
-    let legal = game_logic::compute_legal_moves(player, opponent);
-    let game_over = game_logic::is_game_over(black, white);
-
-    let (winner, over) = if game_over {
-        let result = game_logic::judge_winner(black, white);
-        let w = match result {
-            game_logic::GameResult::BlackWin(_, _) => Some("black".to_string()),
-            game_logic::GameResult::WhiteWin(_, _) => Some("white".to_string()),
-            game_logic::GameResult::Draw(_) => None,
+impl GameStateResponse {
+    pub fn build_response(
+        black: Bitboard,
+        white: Bitboard,
+        current_turn: &str,
+        flips: Bitboard,
+    ) -> Self {
+        let (player, opponent) = if current_turn == "black" {
+            (black, white)
+        } else {
+            (white, black)
         };
-        (w, true)
-    } else {
-        (None, false)
-    };
 
-    GameStateResponse {
-        black: black.to_string(),
-        white: white.to_string(),
-        legal_moves: legal.to_string(),
-        current_turn: current_turn.to_string(),
-        game_over: over,
-        black_score: black.count_ones(),
-        white_score: white.count_ones(),
-        winner,
-        flips: flips.to_string(),
+        let legal = game_logic::compute_legal_moves(player, opponent);
+        let game_over = game_logic::is_game_over(black, white);
+
+        let (winner, over) = if game_over {
+            let result = game_logic::judge_winner(black, white);
+            let w = match result {
+                game_logic::GameResult::BlackWin(_, _) => Some("black".to_string()),
+                game_logic::GameResult::WhiteWin(_, _) => Some("white".to_string()),
+                game_logic::GameResult::Draw(_) => None,
+            };
+            (w, true)
+        } else {
+            (None, false)
+        };
+
+        GameStateResponse {
+            black: black.to_string(),
+            white: white.to_string(),
+            legal_moves: legal.to_string(),
+            current_turn: current_turn.to_string(),
+            game_over: over,
+            black_score: black.count_ones(),
+            white_score: white.count_ones(),
+            winner,
+            flips: flips.to_string(),
+        }
     }
 }
