@@ -93,35 +93,27 @@ fn empty_squares(player: Bitboard, opponent: Bitboard) -> Bitboard {
 
 /// 判断当前玩家是否有合法落子
 pub fn has_legal_move(player: Bitboard, opponent: Bitboard) -> bool {
-    let empty = empty_squares(player, opponent);
-    if empty == 0 {
-        return false;
-    }
-    let mut e = empty;
-    while e != 0 {
-        let pos = e & (!e + 1);
+    let mut empty = empty_squares(player, opponent);
+    while empty != 0 {
+        let pos = empty & empty.wrapping_neg();
         if compute_flips(pos, player, opponent) != 0 {
             return true;
         }
-        e &= e - 1;
+        empty &= empty.wrapping_sub(1);
     }
     false
 }
 
 /// 计算所有合法落子位置，返回 bitboard（每位代表一个可落子位置）
 pub fn compute_legal_moves(player: Bitboard, opponent: Bitboard) -> Bitboard {
-    let empty = empty_squares(player, opponent);
-    if empty == 0 {
-        return 0;
-    }
+    let mut empty = empty_squares(player, opponent);
     let mut legal = 0u64;
-    let mut e = empty;
-    while e != 0 {
-        let pos = e & (!e + 1);
+    while empty != 0 {
+        let pos = empty & empty.wrapping_neg();
         if compute_flips(pos, player, opponent) != 0 {
             legal |= pos;
         }
-        e &= e - 1;
+        empty &= empty.wrapping_sub(1);
     }
     legal
 }
