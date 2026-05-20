@@ -132,7 +132,7 @@ onMounted(async () => {
     <!-- 顶栏 -->
     <div class="top-bar">
       <button class="back-btn" @click="goBack">← 返回</button>
-      <h1 class="page-title">📜 历史查询</h1>
+      <h1 class="page-title">历史查询</h1>
       <div class="spacer"></div>
     </div>
 
@@ -152,7 +152,7 @@ onMounted(async () => {
       </div>
       <div class="stat-item win-draw">
         <span class="stat-value">{{ stats.draws }}</span>
-        <span class="stat-label">🤝 平局</span>
+        <span class="stat-label">平局</span>
       </div>
     </div>
 

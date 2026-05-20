@@ -111,7 +111,7 @@ function goBack() {
 
       <div class="turn-indicator" v-if="!gameOver && !showSidePicker">
         <template v-if="isAiThinking">
-          🤔 AI 思考中...
+          AI 思考中...
         </template>
         <template v-else>
           轮到：<strong>{{ turnLabel() }}</strong>
@@ -143,12 +143,12 @@ function goBack() {
     <div class="bottom-bar">
       <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
       <div class="bottom-buttons">
-        <button class="new-game-btn" @click="newGame">🔄 新游戏</button>
+        <button class="new-game-btn" @click="newGame">新游戏</button>
         <button
           v-if="!showSidePicker"
           class="switch-btn"
           @click="showPicker"
-        >🔀 换边</button>
+        >换边</button>
       </div>
     </div>
   </div>

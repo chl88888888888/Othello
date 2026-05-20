@@ -2,12 +2,14 @@ mod game_logic;
 mod response;
 mod db;
 mod ai;
+mod network;
 
 use std::sync::Mutex;
 use game_logic::Bitboard;
 use response::GameStateResponse;
 use db::{Database, MoveRecord, GameSummary, GameStats, GameRecord};
 use ai::{AiState, OthelloModel, find_model_path};
+use network::OnlineState;
 use tauri::Manager;
 
 #[tauri::command]
@@ -199,6 +201,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(None::<OthelloModel>)) // AI 状态
+        .manage(Mutex::new(OnlineState::new())) // 联机状态
         .setup(|app| {
             // ── 初始化数据库 ──
             let db_path = dirs_next().unwrap_or_else(|| {
@@ -239,6 +242,11 @@ pub fn run() {
             get_game_detail,
             get_stats,
             delete_game,
+            network::connect_server,
+            network::disconnect_server,
+            network::find_match,
+            network::online_send_move,
+            network::online_give_up,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
