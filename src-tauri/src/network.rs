@@ -69,8 +69,8 @@ struct ServerConfig {
 
 /// 从编译期嵌入的 config.json 读取服务器地址，跨平台兼容
 fn read_server_url() -> String {
-    let config: ServerConfig = serde_json::from_str(include_str!("../config.json"))
-        .expect("无法解析嵌入的 config.json");
+    let config: ServerConfig =
+        serde_json::from_str(include_str!("../config.json")).expect("无法解析嵌入的 config.json");
     format!("ws://{}:{}/ws", config.server_host, config.server_port)
 }
 
@@ -93,7 +93,7 @@ pub async fn connect_server(
     // channel: Tauri 命令 → sender → 后台任务 → WebSocket
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
-    // 后台任务 ①：把 channel 收到的消息写入 WebSocket
+    // 后台任务：把 channel 收到的消息写入 WebSocket
     tauri::async_runtime::spawn(async move {
         while let Some(msg) = rx.recv().await {
             if write.send(Message::Text(msg.into())).await.is_err() {
@@ -102,7 +102,7 @@ pub async fn connect_server(
         }
     });
 
-    // 后台任务 ②：从 WebSocket 读取消息，通过 Tauri 事件推给前端
+    // 后台任务：从 WebSocket 读取消息，通过 Tauri 事件推给前端
     tauri::async_runtime::spawn(async move {
         while let Some(result) = read.next().await {
             match result {
@@ -150,14 +150,9 @@ pub fn disconnect_server(
 
 /// 开始匹配对手
 #[tauri::command]
-pub fn find_match(
-    state: tauri::State<'_, std::sync::Mutex<OnlineState>>,
-) -> Result<(), String> {
+pub fn find_match(state: tauri::State<'_, std::sync::Mutex<OnlineState>>) -> Result<(), String> {
     let online = state.lock().map_err(|e| format!("状态锁失败: {e}"))?;
-    let sender = online
-        .sender
-        .as_ref()
-        .ok_or("未连接到服务器")?;
+    let sender = online.sender.as_ref().ok_or("未连接到服务器")?;
 
     let msg = serialize_msg(&make_msg("find_match"))?;
     sender.send(msg).map_err(|e| format!("发送失败: {e}"))?;
@@ -171,10 +166,7 @@ pub fn online_send_move(
     pos_index: u32,
 ) -> Result<(), String> {
     let online = state.lock().map_err(|e| format!("状态锁失败: {e}"))?;
-    let sender = online
-        .sender
-        .as_ref()
-        .ok_or("未连接到服务器")?;
+    let sender = online.sender.as_ref().ok_or("未连接到服务器")?;
 
     let msg = serialize_msg(&WsMessage {
         msg_type: "move".into(),
@@ -192,10 +184,7 @@ pub fn online_give_up(
     state: tauri::State<'_, std::sync::Mutex<OnlineState>>,
 ) -> Result<(), String> {
     let online = state.lock().map_err(|e| format!("状态锁失败: {e}"))?;
-    let sender = online
-        .sender
-        .as_ref()
-        .ok_or("未连接到服务器")?;
+    let sender = online.sender.as_ref().ok_or("未连接到服务器")?;
 
     let msg = serialize_msg(&make_msg("give_up"))?;
     sender.send(msg).map_err(|e| format!("发送失败: {e}"))?;

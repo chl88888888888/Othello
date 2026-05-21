@@ -3,6 +3,24 @@
 
 pub type Bitboard = u64;
 
+// ---------- 位迭代器 ----------
+
+/// 迭代 bitboard 中所有置位的索引 (0-63)
+pub struct BitIter(pub u64);
+
+impl Iterator for BitIter {
+    type Item = u32;
+
+    fn next(&mut self) -> Option<u32> {
+        if self.0 == 0 {
+            return None;
+        }
+        let lsb = self.0 & self.0.wrapping_neg();
+        self.0 &= self.0 - 1;
+        Some(lsb.trailing_zeros())
+    }
+}
+
 // ---------- 边界掩码 ----------
 const FILE_A: Bitboard = 0x0101010101010101;
 const FILE_H: Bitboard = 0x8080808080808080;
@@ -79,11 +97,9 @@ fn flip_one_dir(pos: Bitboard, own: Bitboard, opponent: Bitboard, dir: &Dir) -> 
 // ---------- 全方向总翻转 ----------
 /// 计算在 `pos` 落子后，会翻转的对方棋子 bitboard
 pub fn compute_flips(pos: Bitboard, own: Bitboard, opponent: Bitboard) -> Bitboard {
-    let mut total = 0;
     DIRECTIONS
         .iter()
-        .for_each(|dir| total |= flip_one_dir(pos, own, opponent, dir));
-    total
+        .fold(0, |total, dir| total | flip_one_dir(pos, own, opponent, dir))
 }
 
 // ---------- 合法落子点检测 ----------
@@ -93,29 +109,15 @@ fn empty_squares(player: Bitboard, opponent: Bitboard) -> Bitboard {
 
 /// 判断当前玩家是否有合法落子
 pub fn has_legal_move(player: Bitboard, opponent: Bitboard) -> bool {
-    let mut empty = empty_squares(player, opponent);
-    while empty != 0 {
-        let pos = empty & empty.wrapping_neg();
-        if compute_flips(pos, player, opponent) != 0 {
-            return true;
-        }
-        empty &= empty.wrapping_sub(1);
-    }
-    false
+    BitIter(empty_squares(player, opponent))
+        .any(|idx| compute_flips(1u64 << idx, player, opponent) != 0)
 }
 
 /// 计算所有合法落子位置，返回 bitboard（每位代表一个可落子位置）
 pub fn compute_legal_moves(player: Bitboard, opponent: Bitboard) -> Bitboard {
-    let mut empty = empty_squares(player, opponent);
-    let mut legal = 0u64;
-    while empty != 0 {
-        let pos = empty & empty.wrapping_neg();
-        if compute_flips(pos, player, opponent) != 0 {
-            legal |= pos;
-        }
-        empty &= empty.wrapping_sub(1);
-    }
-    legal
+    BitIter(empty_squares(player, opponent))
+        .filter(|&idx| compute_flips(1u64 << idx, player, opponent) != 0)
+        .fold(0, |acc, idx| acc | (1u64 << idx))
 }
 
 // ---------- 执行落子 ----------

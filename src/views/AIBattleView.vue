@@ -159,8 +159,10 @@ function goBack() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 16px 32px;
-  max-width: 520px;
+  padding: 12px 12px 20px;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* ── 顶栏 ── */
@@ -168,14 +170,14 @@ function goBack() {
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: 480px;
-  margin-bottom: 14px;
-  gap: 10px;
+  max-width: 100%;
+  margin-bottom: 10px;
+  gap: 8px;
 }
 
 .back-btn {
-  padding: 6px 14px;
-  font-size: 0.9rem;
+  padding: 5px 10px;
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
   border: 1px solid #444;
   border-radius: 8px;
   background: #2a2a2a;
@@ -183,6 +185,7 @@ function goBack() {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .back-btn:hover {
@@ -193,12 +196,14 @@ function goBack() {
 .page-title {
   flex: 1;
   text-align: center;
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .spacer {
-  width: 60px;
+  width: 48px;
+  flex-shrink: 0;
 }
 
 /* ── 选边面板 ── */
@@ -206,38 +211,41 @@ function goBack() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 28px 20px;
-  margin-bottom: 10px;
+  gap: 12px;
+  padding: 20px 16px;
+  margin-bottom: 8px;
   background: #2a2a2a;
   border-radius: 12px;
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
 }
 
 .picker-label {
-  font-size: 1.05rem;
+  font-size: clamp(0.85rem, 3vw, 1.05rem);
   color: #ccc;
+  text-align: center;
 }
 
 .picker-buttons {
   display: flex;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .side-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 28px;
+  gap: 6px;
+  padding: 12px 20px;
   border: 2px solid #444;
   border-radius: 12px;
   background: #333;
   color: #f0f0f0;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 1rem;
+  font-size: clamp(0.82rem, 2.8vw, 1rem);
 }
 
 .side-btn:hover {
@@ -265,28 +273,30 @@ function goBack() {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 480px;
-  margin-bottom: 10px;
-  gap: 10px;
+  max-width: 100%;
+  margin-bottom: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .score {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.95rem;
-  padding: 6px 14px;
+  gap: 4px;
+  font-size: clamp(0.75rem, 2.5vw, 0.95rem);
+  padding: 4px 10px;
   border-radius: 8px;
   background: #2a2a2a;
+  white-space: nowrap;
 }
 
 .piece-icon {
-  font-size: 1.2rem;
+  font-size: clamp(0.9rem, 3vw, 1.2rem);
 }
 
 .turn-indicator {
-  font-size: 1.05rem;
-  padding: 6px 16px;
+  font-size: clamp(0.8rem, 2.8vw, 1.05rem);
+  padding: 4px 10px;
   border-radius: 8px;
   background: #333;
   white-space: nowrap;
@@ -309,6 +319,8 @@ function goBack() {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   cursor: pointer;
   transition: box-shadow 0.3s;
+  max-width: 100%;
+  height: auto;
 }
 
 .board-canvas.ai-turn {
@@ -318,26 +330,27 @@ function goBack() {
 
 /* ── 底部 ── */
 .bottom-bar {
-  margin-top: 14px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .error {
   color: #f87171;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2.3vw, 0.9rem);
+  text-align: center;
 }
 
 .bottom-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .new-game-btn {
-  padding: 8px 24px;
-  font-size: 1rem;
+  padding: 6px 18px;
+  font-size: clamp(0.82rem, 2.6vw, 1rem);
   border: none;
   border-radius: 8px;
   background: #3a6b4c;
@@ -351,8 +364,8 @@ function goBack() {
 }
 
 .switch-btn {
-  padding: 8px 18px;
-  font-size: 0.95rem;
+  padding: 6px 14px;
+  font-size: clamp(0.78rem, 2.4vw, 0.95rem);
   border: 1px solid #555;
   border-radius: 8px;
   background: #2a2a2a;

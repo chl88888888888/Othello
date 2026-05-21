@@ -29,4 +29,6 @@ candle-nn = "0.10.2"
 tokio = { version = "1.52.3", features = ["full"] }
 tokio-tungstenite = "0.29.0"
 futures-util = "0.3.32"
+log = "0.4.29"
+simplelog = "0.12.2"
 

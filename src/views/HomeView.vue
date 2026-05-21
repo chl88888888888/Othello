@@ -71,8 +71,12 @@ function navigate(menu: MenuItem) {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 40px 20px;
-  gap: 40px;
+  min-height: 100dvh;
+  padding: 32px 16px;
+  gap: 28px;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .home-hero {
@@ -80,9 +84,9 @@ function navigate(menu: MenuItem) {
 }
 
 .home-title {
-  font-size: 3rem;
-  letter-spacing: 6px;
-  margin-bottom: 6px;
+  font-size: clamp(2rem, 10vw, 3rem);
+  letter-spacing: 4px;
+  margin-bottom: 4px;
   background: linear-gradient(135deg, #e0e0e0, #a0c0a0);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -90,26 +94,26 @@ function navigate(menu: MenuItem) {
 }
 
 .home-subtitle {
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 3vw, 1rem);
   color: #888;
-  letter-spacing: 4px;
+  letter-spacing: 3px;
 }
 
 /* ── 菜单卡片网格 ── */
 .menu-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
-  max-width: 340px;
+  max-width: 100%;
 }
 
 .menu-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 22px 20px;
+  gap: 4px;
+  padding: 18px 16px;
   border: 1px solid #3a3a3a;
   border-radius: 14px;
   background: #262626;
@@ -146,12 +150,12 @@ function navigate(menu: MenuItem) {
 }
 
 .menu-title {
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
   font-weight: 600;
 }
 
 .menu-sub {
-  font-size: 0.82rem;
+  font-size: clamp(0.7rem, 2.2vw, 0.82rem);
   color: #999;
 }
 
@@ -161,7 +165,7 @@ function navigate(menu: MenuItem) {
 }
 
 .home-footer p {
-  font-size: 0.78rem;
+  font-size: clamp(0.65rem, 2vw, 0.78rem);
   color: #555;
 }
 </style>

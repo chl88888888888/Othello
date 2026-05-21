@@ -307,8 +307,10 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 16px 32px;
-  max-width: 520px;
+  padding: 12px 12px 20px;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* ── 顶栏 ── */
@@ -316,14 +318,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: 480px;
-  margin-bottom: 14px;
-  gap: 10px;
+  max-width: 100%;
+  margin-bottom: 10px;
+  gap: 8px;
 }
 
 .back-btn {
-  padding: 6px 14px;
-  font-size: 0.9rem;
+  padding: 5px 10px;
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
   border: 1px solid #444;
   border-radius: 8px;
   background: #2a2a2a;
@@ -331,6 +333,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .back-btn:hover {
   background: #3a3a3a;
@@ -340,12 +343,14 @@ onUnmounted(() => {
 .page-title {
   flex: 1;
   text-align: center;
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .spacer {
-  width: 60px;
+  width: 48px;
+  flex-shrink: 0;
 }
 
 /* ── 信息栏 ── */
@@ -354,13 +359,14 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 456px;
-  padding: 8px 4px;
-  gap: 6px;
+  max-width: 100%;
+  padding: 6px 2px;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .score {
-  font-size: 0.85rem;
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
   color: #aaa;
   white-space: nowrap;
 }
@@ -368,29 +374,29 @@ onUnmounted(() => {
   color: #fff;
 }
 .piece-icon {
-  margin-right: 2px;
+  margin-right: 1px;
 }
 
 .turn-indicator {
   text-align: center;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2.4vw, 0.9rem);
   color: #ccc;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 .turn-indicator.winner {
-  font-size: 1rem;
+  font-size: clamp(0.85rem, 2.8vw, 1rem);
   font-weight: 600;
   color: #ffd700;
 }
 .role-tag {
-  font-size: 0.75rem;
+  font-size: clamp(0.62rem, 1.9vw, 0.75rem);
   color: #888;
 }
 .my-color-tag {
-  font-size: 0.75rem;
+  font-size: clamp(0.62rem, 1.9vw, 0.75rem);
   color: #666;
 }
 
@@ -399,7 +405,9 @@ onUnmounted(() => {
   border-radius: 12px;
   cursor: default;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  margin: 10px 0;
+  margin: 8px 0;
+  max-width: 100%;
+  height: auto;
 }
 .board-canvas.my-turn {
   cursor: pointer;
@@ -410,36 +418,36 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  margin-top: 30px;
-  padding: 28px 32px;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 20px 20px;
   border-radius: 14px;
   background: #1e1e1e;
   border: 1px solid #333;
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
 }
 
 .input-label {
-  font-size: 0.85rem;
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
   color: #888;
   align-self: flex-start;
 }
 
 .input-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
 .url-input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid #444;
   background: #2a2a2a;
   color: #ddd;
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 2.4vw, 0.95rem);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -448,15 +456,15 @@ onUnmounted(() => {
 }
 
 .hint {
-  font-size: 0.75rem;
+  font-size: clamp(0.6rem, 1.9vw, 0.75rem);
   color: #555;
   margin: 0;
 }
 
 /* ── 匹配中 ── */
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 4px solid #333;
   border-top-color: #5a9;
   border-radius: 50%;
@@ -470,19 +478,20 @@ onUnmounted(() => {
 }
 
 .matching-text {
-  font-size: 1rem;
+  font-size: clamp(0.85rem, 2.6vw, 1rem);
   color: #ccc;
+  text-align: center;
 }
 
 .match-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 /* ── 按钮 ── */
 .action-btn {
-  padding: 10px 24px;
-  font-size: 0.95rem;
+  padding: 8px 18px;
+  font-size: clamp(0.8rem, 2.4vw, 0.95rem);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -522,14 +531,14 @@ onUnmounted(() => {
 .bottom-bar {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .error {
   color: #e05555;
-  font-size: 0.85rem;
-  margin-top: 8px;
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+  margin-top: 6px;
   text-align: center;
 }
 </style>

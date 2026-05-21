@@ -232,9 +232,10 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 16px 32px;
-  max-width: 520px;
+  padding: 12px 12px 20px;
   width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* ── 顶栏 ── */
@@ -242,14 +243,14 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: 480px;
-  margin-bottom: 14px;
-  gap: 10px;
+  max-width: 100%;
+  margin-bottom: 10px;
+  gap: 8px;
 }
 
 .back-btn {
-  padding: 6px 14px;
-  font-size: 0.9rem;
+  padding: 5px 10px;
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
   border: 1px solid #444;
   border-radius: 8px;
   background: #2a2a2a;
@@ -257,6 +258,7 @@ onMounted(async () => {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .back-btn:hover {
@@ -267,21 +269,23 @@ onMounted(async () => {
 .page-title {
   flex: 1;
   text-align: center;
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .spacer {
-  width: 60px;
+  width: 48px;
+  flex-shrink: 0;
 }
 
 /* ── 统计面板 ── */
 .stats-panel {
   display: flex;
-  gap: 10px;
+  gap: 6px;
   width: 100%;
-  max-width: 480px;
-  margin-bottom: 16px;
+  max-width: 100%;
+  margin-bottom: 12px;
 }
 
 .stat-item {
@@ -289,20 +293,20 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 6px;
+  padding: 10px 4px;
   border-radius: 10px;
   background: #262626;
   border: 1px solid #3a3a3a;
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
   font-weight: 700;
   color: #e0e0e0;
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: clamp(0.6rem, 2vw, 0.75rem);
   color: #999;
   margin-top: 2px;
 }
@@ -322,31 +326,31 @@ onMounted(async () => {
 /* ── 回放区域 ── */
 .replay-section {
   width: 100%;
-  max-width: 480px;
-  margin-bottom: 16px;
+  max-width: 100%;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .replay-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   justify-content: center;
 }
 
 .replay-badge {
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 2.6vw, 0.95rem);
   color: #5a8a5a;
   font-weight: 600;
 }
 
 .stop-btn {
-  padding: 4px 14px;
-  font-size: 0.85rem;
+  padding: 4px 12px;
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
   border: 1px solid #944;
   border-radius: 6px;
   background: #3a2020;
@@ -362,8 +366,8 @@ onMounted(async () => {
 .replay-info {
   display: flex;
   align-items: center;
-  gap: 14px;
-  font-size: 0.95rem;
+  gap: 10px;
+  font-size: clamp(0.78rem, 2.5vw, 0.95rem);
 }
 
 .turn-text {
@@ -372,39 +376,41 @@ onMounted(async () => {
 }
 
 .score {
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 6px;
   background: #2a2a2a;
-  font-size: 0.9rem;
+  font-size: clamp(0.7rem, 2.3vw, 0.9rem);
 }
 
 .board-canvas {
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  max-width: 100%;
+  height: auto;
 }
 
 /* ── 列表区域 ── */
 .list-section {
   width: 100%;
-  max-width: 480px;
+  max-width: 100%;
 }
 
 .list-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .list-header h2 {
-  font-size: 1.1rem;
+  font-size: clamp(0.9rem, 3vw, 1.1rem);
   color: #ccc;
   margin: 0;
 }
 
 .refresh-btn {
-  padding: 4px 12px;
-  font-size: 0.8rem;
+  padding: 4px 10px;
+  font-size: clamp(0.68rem, 2vw, 0.8rem);
   border: 1px solid #444;
   border-radius: 6px;
   background: #2a2a2a;
@@ -420,35 +426,35 @@ onMounted(async () => {
 
 .error-msg {
   color: #f87171;
-  font-size: 0.85rem;
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
   text-align: center;
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 /* ── 空状态 ── */
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 30px 16px;
   color: #777;
 }
 
 .empty-icon {
-  font-size: 3rem;
+  font-size: 2.4rem;
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .empty-hint {
-  font-size: 0.82rem;
+  font-size: clamp(0.7rem, 2vw, 0.82rem);
   color: #555;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 /* ── 对局卡片 ── */
 .game-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .game-card {
@@ -473,28 +479,29 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 6px;
+  padding: 10px 10px;
   cursor: pointer;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .game-id {
-  font-size: 0.85rem;
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
   color: #777;
   font-weight: 600;
-  min-width: 32px;
+  min-width: 28px;
 }
 
 .game-result {
-  min-width: 48px;
+  min-width: 40px;
 }
 
 .result-tag {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.78rem;
+  font-size: clamp(0.65rem, 2vw, 0.78rem);
   font-weight: 600;
 }
 
@@ -518,29 +525,32 @@ onMounted(async () => {
 
 .game-score {
   flex: 1;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2.3vw, 0.9rem);
   color: #ccc;
   text-align: center;
+  min-width: 60px;
 }
 
 .game-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  font-size: 0.72rem;
+  font-size: clamp(0.6rem, 1.8vw, 0.72rem);
   color: #666;
-  gap: 2px;
+  gap: 1px;
+  flex-shrink: 0;
 }
 
 .delete-btn {
-  padding: 8px 10px;
-  font-size: 0.85rem;
+  padding: 6px 8px;
+  font-size: clamp(0.7rem, 2.1vw, 0.85rem);
   background: none;
   border: none;
   color: #555;
   cursor: pointer;
   transition: color 0.2s;
   border-radius: 0 10px 10px 0;
+  flex-shrink: 0;
 }
 
 .delete-btn:hover {

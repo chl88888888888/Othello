@@ -9,7 +9,7 @@ use candle_core::{Device, DType, Tensor};
 use candle_nn::{conv2d, conv2d_no_bias, linear, Conv2d, Conv2dConfig, Linear, Module, VarBuilder};
 use std::sync::Mutex;
 
-use crate::game_logic::{self, Bitboard};
+use crate::game_logic::{self, BitIter, Bitboard};
 
 // ── 残差块 ────────────────────────────────────────
 struct ResBlock {
@@ -41,11 +41,9 @@ impl ResBlock {
     }
 
     fn forward(&self, x: &Tensor) -> candle_core::Result<Tensor> {
-        let residual = x.clone();
-        let x = self.conv1.forward(x)?;
-        let x = x.relu()?;
-        let x = self.conv2.forward(&x)?;
-        (x + residual)?.relu()
+        let y = self.conv1.forward(x)?.relu()?;
+        let y = self.conv2.forward(&y)?;
+        y.add(x)?.relu()
     }
 }
 
@@ -102,15 +100,12 @@ impl OthelloModel {
     /// 前向传播：评估局面，返回 f32 ∈ [-1, 1]
     fn forward(&self, black: Bitboard, white: Bitboard) -> candle_core::Result<f32> {
         let x = bitboards_to_tensor(black, white, &self.device)?;
-        let x = self.conv_in.forward(&x)?;
-        let x = x.relu()?;
+        let x = self.conv_in.forward(&x)?.relu()?;
         let x = self.res1.forward(&x)?;
         let x = self.res2.forward(&x)?;
         let x = self.res3.forward(&x)?;
-        let x = self.conv_out.forward(&x)?;
-        let x = x.flatten(1, 3)?; // [1, 1, 8, 8] → [1, 64]
-        let x = self.fc.forward(&x)?;
-        let x = x.tanh()?;
+        let x = self.conv_out.forward(&x)?.flatten(1, 3)?; // [1, 1, 8, 8] → [1, 64]
+        let x = self.fc.forward(&x)?.tanh()?;
         // 提取标量值
         let values = x.to_vec1::<f32>()?;
         Ok(values[0])
@@ -134,37 +129,22 @@ impl OthelloModel {
             return None;
         }
 
-        let mut best_pos: Option<u32> = None;
-        let mut best_score = f32::NEG_INFINITY;
+        let score_sign: f32 = if is_black { 1.0 } else { -1.0 };
 
-        let mut remaining = legal;
-        while remaining != 0 {
-            let pos = remaining & (!remaining + 1); // 提取最低位
-            let pos_idx = pos.trailing_zeros();
-
-            // 模拟落子
-            let mut sim_black = black;
-            let mut sim_white = white;
-            let (sim_player, sim_opponent) = if is_black {
-                (&mut sim_black, &mut sim_white)
-            } else {
-                (&mut sim_white, &mut sim_black)
-            };
-            game_logic::make_move(sim_player, sim_opponent, pos);
-
-            // 评估结果局面
-            let score = self.evaluate(sim_black, sim_white);
-            let adjusted = if is_black { score } else { -score };
-
-            if adjusted > best_score {
-                best_score = adjusted;
-                best_pos = Some(pos_idx);
-            }
-
-            remaining &= remaining - 1;
-        }
-
-        best_pos
+        BitIter(legal)
+            .map(|pos_idx| {
+                let pos = 1u64 << pos_idx;
+                let (mut sim_black, mut sim_white) = (black, white);
+                if is_black {
+                    game_logic::make_move(&mut sim_black, &mut sim_white, pos);
+                } else {
+                    game_logic::make_move(&mut sim_white, &mut sim_black, pos);
+                }
+                let score = self.evaluate(sim_black, sim_white) * score_sign;
+                (pos_idx, score)
+            })
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less))
+            .map(|(pos_idx, _)| pos_idx)
     }
 }
 
@@ -173,14 +153,10 @@ impl OthelloModel {
 /// 位索引: bit 0=a1(LSB), bit 63=h8(MSB)
 /// 张量布局: channel 0=黑棋, channel 1=白棋, dim 2=行(rank1→8), dim 3=列(a→h)
 fn bitboards_to_tensor(black: u64, white: u64, device: &Device) -> candle_core::Result<Tensor> {
-    let mut data = vec![0f32; 2 * 8 * 8];
-    for i in 0..64 {
-        let rank = i / 8; // 0=a1..h1, 7=a8..h8
-        let file = i % 8;
-        let idx = rank * 8 + file;
-        data[idx] = ((black >> i) & 1) as f32;
-        data[64 + idx] = ((white >> i) & 1) as f32;
-    }
+    let data: Vec<f32> = (0..64)
+        .map(|i| ((black >> i) & 1) as f32)
+        .chain((0..64).map(|i| ((white >> i) & 1) as f32))
+        .collect();
     Tensor::from_vec(data, (1, 2, 8, 8), device)
 }
 

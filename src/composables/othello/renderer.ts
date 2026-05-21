@@ -153,10 +153,17 @@ export function drawBoard(
   const { blackBits: b, whiteBits: w, legalMoveBits: lm, currentTurn, gameOver, anim } = options;
 
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = BOARD_PX * dpr;
-  canvas.height = BOARD_PX * dpr;
-  canvas.style.width = BOARD_PX + "px";
-  canvas.style.height = BOARD_PX + "px";
+
+  // 自适应屏幕宽度：棋盘最大 456px，但不超过视口宽度减去内边距
+  const maxDisplayWidth = Math.min(window.innerWidth - 32, BOARD_PX);
+  const displaySize = Math.floor(maxDisplayWidth);
+
+  // Canvas 内部渲染保持全分辨率
+  canvas.width = Math.floor(BOARD_PX * dpr);
+  canvas.height = Math.floor(BOARD_PX * dpr);
+  // CSS 显示尺寸自适应
+  canvas.style.width = displaySize + "px";
+  canvas.style.height = displaySize + "px";
 
   const ctx = canvas.getContext("2d")!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
