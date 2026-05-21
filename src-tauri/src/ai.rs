@@ -7,7 +7,6 @@
 
 use candle_core::{Device, DType, Tensor};
 use candle_nn::{conv2d, conv2d_no_bias, linear, Conv2d, Conv2dConfig, Linear, Module, VarBuilder};
-use std::path::PathBuf;
 use std::sync::Mutex;
 
 use crate::game_logic::{self, Bitboard};
@@ -62,13 +61,15 @@ pub struct OthelloModel {
 }
 
 impl OthelloModel {
-    /// 从 safetensors 文件加载模型
-    pub fn load(model_path: &str) -> candle_core::Result<Self> {
-        let device = Device::Cpu;
-        let vb = unsafe {
-            VarBuilder::from_mmaped_safetensors(&[model_path], DType::F32, &device)?
-        };
 
+    /// 从字节数据直接加载模型（用于 Android 从 APK assets 加载）
+    pub fn load_from_bytes(data: Vec<u8>) -> candle_core::Result<Self> {
+        let device = Device::Cpu;
+        let vb = VarBuilder::from_buffered_safetensors(data, DType::F32, &device)?;
+        Self::build(vb, device)
+    }
+
+    fn build(vb: VarBuilder, device: Device) -> candle_core::Result<Self> {
         let cfg = Conv2dConfig {
             padding: 1,
             ..Default::default()
@@ -181,46 +182,6 @@ fn bitboards_to_tensor(black: u64, white: u64, device: &Device) -> candle_core::
         data[64 + idx] = ((white >> i) & 1) as f32;
     }
     Tensor::from_vec(data, (1, 2, 8, 8), device)
-}
-
-// ── 模型路径查找 ─────────────────────────────────
-/// 在开发(dev)与生产(prod)环境中查找模型文件
-pub fn find_model_path() -> Option<PathBuf> {
-    // 开发模式：CARGO_MANIFEST_DIR
-    if let Ok(dir) = std::env::var("CARGO_MANIFEST_DIR") {
-        let p = PathBuf::from(&dir)
-            .join("resources")
-            .join("othello_model.safetensors");
-        if p.exists() {
-            return Some(p);
-        }
-    }
-    // 与可执行文件同目录
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(parent) = exe.parent() {
-            let p = parent
-                .join("resources")
-                .join("othello_model.safetensors");
-            if p.exists() {
-                return Some(p);
-            }
-            // 也可能直接在 exe 目录下
-            let p2 = parent.join("othello_model.safetensors");
-            if p2.exists() {
-                return Some(p2);
-            }
-        }
-    }
-    // 当前工作目录
-    let cwd = PathBuf::from("resources").join("othello_model.safetensors");
-    if cwd.exists() {
-        return Some(cwd);
-    }
-    let cwd2 = PathBuf::from("othello_model.safetensors");
-    if cwd2.exists() {
-        return Some(cwd2);
-    }
-    None
 }
 
 // ── Tauri 托管状态 ───────────────────────────────

@@ -3,7 +3,6 @@
 
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
 use tokio_tungstenite::connect_async;
@@ -68,49 +67,11 @@ struct ServerConfig {
     server_port: u16,
 }
 
-/// 查找配置文件路径（开发/生产环境兼容）
-fn find_config_path() -> Option<PathBuf> {
-    // 开发模式：CARGO_MANIFEST_DIR
-    if let Ok(dir) = std::env::var("CARGO_MANIFEST_DIR") {
-        let p = PathBuf::from(&dir).join("config.json");
-        if p.exists() {
-            return Some(p);
-        }
-    }
-    // 与可执行文件同目录
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(parent) = exe.parent() {
-            let p = parent.join("resources").join("config.json");
-            if p.exists() {
-                return Some(p);
-            }
-            let p2 = parent.join("config.json");
-            if p2.exists() {
-                return Some(p2);
-            }
-        }
-    }
-    // 当前工作目录
-    let cwd = PathBuf::from("resources").join("config.json");
-    if cwd.exists() {
-        return Some(cwd);
-    }
-    let cwd2 = PathBuf::from("config.json");
-    if cwd2.exists() {
-        return Some(cwd2);
-    }
-    None
-}
-
-/// 从配置文件读取服务器地址
-fn read_server_url() -> Result<String, String> {
-    let config_path = find_config_path()
-        .ok_or("找不到配置文件 config.json")?;
-    let content = std::fs::read_to_string(&config_path)
-        .map_err(|e| format!("读取配置文件失败: {e}"))?;
-    let config: ServerConfig = serde_json::from_str(&content)
-        .map_err(|e| format!("解析配置文件失败: {e}"))?;
-    Ok(format!("ws://{}:{}/ws", config.server_host, config.server_port))
+/// 从编译期嵌入的 config.json 读取服务器地址，跨平台兼容
+fn read_server_url() -> String {
+    let config: ServerConfig = serde_json::from_str(include_str!("../config.json"))
+        .expect("无法解析嵌入的 config.json");
+    format!("ws://{}:{}/ws", config.server_host, config.server_port)
 }
 
 // ── Tauri 命令 ────────────────────────────────────
@@ -121,7 +82,7 @@ pub async fn connect_server(
     app: AppHandle,
     state: tauri::State<'_, std::sync::Mutex<OnlineState>>,
 ) -> Result<(), String> {
-    let ws_url = read_server_url()?;
+    let ws_url = read_server_url();
 
     let (ws_stream, _) = connect_async(&ws_url)
         .await

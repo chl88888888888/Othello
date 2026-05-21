@@ -8,7 +8,7 @@ use std::sync::Mutex;
 use game_logic::Bitboard;
 use response::GameStateResponse;
 use db::{Database, MoveRecord, GameSummary, GameStats, GameRecord};
-use ai::{AiState, OthelloModel, find_model_path};
+use ai::{AiState, OthelloModel};
 use network::OnlineState;
 use tauri::Manager;
 
@@ -204,31 +204,46 @@ pub fn run() {
         .manage(Mutex::new(OnlineState::new())) // 联机状态
         .setup(|app| {
             // ── 初始化数据库 ──
-            let db_path = dirs_next().unwrap_or_else(|| {
-                let mut p = std::env::current_dir().unwrap_or_default();
-                p.push("othello.db");
-                p
-            });
+            // Android: 使用 Tauri 的 app_data_dir，可写入
+            let db_dir = app
+                .path()
+                .app_data_dir()
+                .expect("无法获取 app_data_dir");
 
-            let database = Database::open(db_path)
-                .expect("数据库初始化失败");
-            app.manage(database);
+            // 确保目录存在
+            if let Err(e) = std::fs::create_dir_all(&db_dir) {
+                eprintln!("[DB] 无法创建数据目录 {:?}: {e}", db_dir);
+            }
 
-            // ── 初始化 AI 模型 ──
-            let ai_mutex = app.state::<AiState>();
-            if let Some(model_path) = find_model_path() {
-                match OthelloModel::load(&model_path.to_string_lossy()) {
-                    Ok(model) => {
-                        let mut ai = ai_mutex.lock().unwrap();
-                        *ai = Some(model);
-                        println!("[AI] 模型加载成功: {}", model_path.display());
-                    }
-                    Err(e) => {
-                        eprintln!("[AI] 模型加载失败: {e:?}");
-                    }
+            let db_path = db_dir.join("othello.db");
+            println!("[DB] 数据库路径: {:?}", db_path);
+
+            match Database::open(db_path) {
+                Ok(database) => {
+                    app.manage(database);
+                    println!("[DB] 数据库初始化成功");
                 }
-            } else {
-                eprintln!("[AI] 未找到模型文件 othello_model.safetensors");
+                Err(e) => {
+                    // 不要 panic，只打印错误，app 仍然可以运行（只是无法保存记录）
+                    eprintln!("[DB] 数据库初始化失败: {e}");
+                }
+            }
+
+            // ── 初始化 AI 模型（编译期嵌入，确保跨平台兼容）──
+            let ai_mutex = app.state::<AiState>();
+
+            // 使用 include_bytes! 在编译时嵌入模型，避免 Android 运行时资产解析问题
+            let model_bytes = include_bytes!("../resources/othello_model.safetensors").to_vec();
+            println!("[AI] 嵌入模型数据: {} bytes", model_bytes.len());
+            match OthelloModel::load_from_bytes(model_bytes) {
+                Ok(model) => {
+                    let mut ai = ai_mutex.lock().unwrap();
+                    *ai = Some(model);
+                    println!("[AI] 模型加载成功（编译期嵌入）");
+                }
+                Err(e) => {
+                    eprintln!("[AI] 模型加载失败: {e:?}");
+                }
             }
 
             Ok(())
@@ -250,14 +265,4 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-/// 获取数据库文件存放路径
-fn dirs_next() -> Option<std::path::PathBuf> {
-    // 使用 Tauri 的 path resolver 获取 app data 目录
-    // 这里先用简单的本地路径方案：与可执行文件同目录
-    let mut path = std::env::current_exe().ok()?;
-    path.pop(); // 去掉可执行文件名
-    path.push("othello.db");
-    Some(path)
 }

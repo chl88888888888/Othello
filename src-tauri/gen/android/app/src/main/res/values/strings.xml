@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">othello</string>
+    <string name="main_activity_title">othello</string>
+</resources>
