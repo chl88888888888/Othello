@@ -162,3 +162,71 @@ fn bitboards_to_tensor(black: u64, white: u64, device: &Device) -> candle_core::
 
 // ── Tauri Managed State ───────────────────────────
 pub type AiState = Mutex<Option<OthelloModel>>;
+
+// ── Unit Tests ───────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game_logic;
+
+    #[test]
+    fn test_bitboards_to_tensor_shape() {
+        let device = Device::Cpu;
+        let (black, white) = game_logic::initial_board();
+        let tensor = bitboards_to_tensor(black, white, &device).unwrap();
+        let dims = tensor.dims();
+        assert_eq!(dims.len(), 4);
+        assert_eq!(dims[0], 1); // batch
+        assert_eq!(dims[1], 2); // channels (black + white)
+        assert_eq!(dims[2], 8); // rows
+        assert_eq!(dims[3], 8); // cols
+    }
+
+    #[test]
+    fn test_bitboards_to_tensor_initial_board() {
+        let device = Device::Cpu;
+        let (black, white) = game_logic::initial_board();
+        let tensor = bitboards_to_tensor(black, white, &device).unwrap();
+        let flat: Vec<f32> = tensor.flatten_all().unwrap().to_vec1().unwrap();
+
+        // Total elements: 1 * 2 * 8 * 8 = 128
+        assert_eq!(flat.len(), 128);
+
+        // Check that the black channel has pieces at d5(35) and e4(28)
+        // In row-major (rank1→8, file a→h), index into channel 0:
+        // d5 = row 4 * 8 + col 3 = 35
+        // e4 = row 3 * 8 + col 4 = 28
+        assert_eq!(flat[35], 1.0); // black piece at d5
+        assert_eq!(flat[28], 1.0); // black piece at e4
+
+        // White channel starts at offset 64
+        // d4 = row 3 * 8 + col 3 = 27
+        // e5 = row 4 * 8 + col 4 = 36
+        assert_eq!(flat[64 + 27], 1.0); // white piece at d4
+        assert_eq!(flat[64 + 36], 1.0); // white piece at e5
+
+        // Empty squares should be 0
+        assert_eq!(flat[0], 0.0);  // a1
+        assert_eq!(flat[63], 0.0); // h8
+    }
+
+    #[test]
+    fn test_bitboards_to_tensor_empty_board() {
+        let device = Device::Cpu;
+        let tensor = bitboards_to_tensor(0, 0, &device).unwrap();
+        let flat: Vec<f32> = tensor.flatten_all().unwrap().to_vec1().unwrap();
+        assert_eq!(flat.len(), 128);
+        assert!(flat.iter().all(|&v| v == 0.0));
+    }
+
+    #[test]
+    fn test_bitboards_to_tensor_full_board() {
+        let device = Device::Cpu;
+        let tensor = bitboards_to_tensor(u64::MAX, 0, &device).unwrap();
+        let flat: Vec<f32> = tensor.flatten_all().unwrap().to_vec1().unwrap();
+        // First 64 should all be 1.0 (black), last 64 all 0.0 (white)
+        assert!(flat[0..64].iter().all(|&v| v == 1.0));
+        assert!(flat[64..128].iter().all(|&v| v == 0.0));
+    }
+}

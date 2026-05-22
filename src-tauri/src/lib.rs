@@ -4,6 +4,9 @@ mod db;
 mod ai;
 mod network;
 
+#[cfg(test)]
+mod test;
+
 use std::sync::Mutex;
 use std::fs::File;
 use game_logic::Bitboard;

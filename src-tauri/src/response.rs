@@ -67,3 +67,66 @@ impl GameStateResponse {
         }
     }
 }
+
+// ── Unit Tests ───────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game_logic;
+
+    #[test]
+    fn test_build_response_initial_black() {
+        let (black, white) = game_logic::initial_board();
+        let resp = GameStateResponse::build_response(black, white, "black", 0);
+
+        assert_eq!(resp.current_turn, "black");
+        assert!(!resp.game_over);
+        assert_eq!(resp.black_score, 2);
+        assert_eq!(resp.white_score, 2);
+        assert!(resp.winner.is_none());
+        assert_eq!(resp.flips, "0");
+        assert!(resp.ai_move_index.is_none());
+
+        // Legal moves should be non-zero (initial board has 4 moves for black)
+        let legal: u64 = resp.legal_moves.parse().unwrap();
+        assert!(legal > 0);
+    }
+
+    #[test]
+    fn test_build_response_game_over_black_win() {
+        // Fill the board: black has all but one square
+        let black = !(1u64 << 0);
+        let white = 1u64 << 0;
+        let resp = GameStateResponse::build_response(black, white, "black", 0);
+
+        assert!(resp.game_over);
+        assert_eq!(resp.winner, Some("black".to_string()));
+        assert_eq!(resp.black_score, 63);
+        assert_eq!(resp.white_score, 1);
+    }
+
+    #[test]
+    fn test_build_response_game_over_draw() {
+        let black = 0xFFFFFFFF00000000u64; // 32 pieces each
+        let white = 0x00000000FFFFFFFFu64;
+        let resp = GameStateResponse::build_response(black, white, "black", 0);
+
+        assert!(resp.game_over);
+        assert_eq!(resp.winner, None);
+        assert_eq!(resp.black_score, 32);
+        assert_eq!(resp.white_score, 32);
+    }
+
+    #[test]
+    fn test_build_response_black_and_white_serialized() {
+        let (black, white) = game_logic::initial_board();
+        let resp = GameStateResponse::build_response(black, white, "black", 0);
+
+        // Verify u64 values are correctly serialized as strings
+        let parsed_black: u64 = resp.black.parse().unwrap();
+        let parsed_white: u64 = resp.white.parse().unwrap();
+        assert_eq!(parsed_black, black);
+        assert_eq!(parsed_white, white);
+    }
+}

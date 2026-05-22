@@ -206,3 +206,134 @@ impl Database {
         Ok(())
     }
 }
+
+// ── Unit Tests ───────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    /// Helper: create a Database backed by a temporary file
+    fn temp_db() -> Database {
+        let mut path = env::temp_dir();
+        let tid = std::thread::current().id();
+        path.push(format!("othello_test_{:?}.db", tid));
+        // Remove stale file if any
+        let _ = std::fs::remove_file(&path);
+        Database::open(path).expect("Failed to create temp database")
+    }
+
+    #[test]
+    fn test_open_database() {
+        let db = temp_db();
+        // Verify the db was created by performing a simple operation
+        let list = db.get_game_list().unwrap();
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn test_save_game() {
+        let db = temp_db();
+
+        let moves = vec![
+            MoveRecord { pos_index: 19, is_black_turn: true },
+            MoveRecord { pos_index: 26, is_black_turn: false },
+        ];
+
+        let id = db
+            .save_game(30, 34, Some("white".to_string()), moves.clone())
+            .unwrap();
+        assert!(id > 0);
+    }
+
+    #[test]
+    fn test_get_game_list() {
+        let db = temp_db();
+
+        // Save two games
+        db.save_game(40, 24, Some("black".to_string()), vec![]).unwrap();
+        db.save_game(32, 32, None, vec![]).unwrap();
+
+        let list = db.get_game_list().unwrap();
+        assert_eq!(list.len(), 2);
+        // Most recent first (by id DESC)
+        assert_eq!(list[0].black_score, 32);
+        assert_eq!(list[1].black_score, 40);
+    }
+
+    #[test]
+    fn test_get_game_detail() {
+        let db = temp_db();
+
+        let moves = vec![
+            MoveRecord { pos_index: 19, is_black_turn: true },
+        ];
+
+        let id = db
+            .save_game(64, 0, Some("black".to_string()), moves.clone())
+            .unwrap();
+
+        let record = db.get_game(id).unwrap();
+        assert_eq!(record.id, id);
+        assert_eq!(record.black_score, 64);
+        assert_eq!(record.white_score, 0);
+        assert_eq!(record.winner, Some("black".to_string()));
+        assert_eq!(record.moves.len(), 1);
+        assert_eq!(record.moves[0].pos_index, 19);
+        assert!(record.moves[0].is_black_turn);
+    }
+
+    #[test]
+    fn test_get_nonexistent_game() {
+        let db = temp_db();
+        let result = db.get_game(9999);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_stats() {
+        let db = temp_db();
+
+        db.save_game(40, 24, Some("black".to_string()), vec![]).unwrap();
+        db.save_game(20, 44, Some("white".to_string()), vec![]).unwrap();
+        db.save_game(32, 32, None, vec![]).unwrap();
+
+        let stats = db.get_stats().unwrap();
+        assert_eq!(stats.total_games, 3);
+        assert_eq!(stats.black_wins, 1);
+        assert_eq!(stats.white_wins, 1);
+        assert_eq!(stats.draws, 1);
+    }
+
+    #[test]
+    fn test_delete_game() {
+        let db = temp_db();
+
+        let id = db
+            .save_game(40, 24, Some("black".to_string()), vec![])
+            .unwrap();
+
+        assert!(db.get_game(id).is_ok());
+        db.delete_game(id).unwrap();
+        assert!(db.get_game(id).is_err());
+    }
+
+    #[test]
+    fn test_delete_nonexistent_game() {
+        let db = temp_db();
+        // Deleting a non-existent ID should succeed silently (0 rows affected)
+        let result = db.delete_game(9999);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_empty_stats() {
+        let db = temp_db();
+        let stats = db.get_stats().unwrap();
+        assert_eq!(stats.total_games, 0);
+        assert_eq!(stats.black_wins, 0);
+        assert_eq!(stats.white_wins, 0);
+        assert_eq!(stats.draws, 0);
+    }
+}
