@@ -99,7 +99,7 @@ function navigate(menu: MenuItem) {
   letter-spacing: 3px;
 }
 
-/* ── 菜单卡片网格 ── */
+/* ── Menu card grid ── */
 .menu-grid {
   display: flex;
   flex-direction: column;
@@ -159,7 +159,7 @@ function navigate(menu: MenuItem) {
   color: #999;
 }
 
-/* ── 底部 ── */
+/* ── Footer ── */
 .home-footer {
   text-align: center;
 }

@@ -1,6 +1,6 @@
-//! AI 模块 — 加载训练好的 CNN 模型，进行局面评估与落子决策
-//! 模型架构: AlphaZero 风格残差网络
-//!   输入: 2×8×8 (黑白位棋盘)
+//! AI module — Loads a trained CNN model for board evaluation and move selection
+//! Model architecture: AlphaZero-style residual network
+//!   Input: 2×8×8 (black/white bitboards)
 //!   → Conv2d(2→64, 3×3, p1) → ReLU
 //!   → ResBlock×3 (Conv2d 64→64, 3×3 + skip)
 //!   → Conv2d(64→1, 1×1) → Flatten → Linear(64→1) → tanh
@@ -11,7 +11,7 @@ use std::sync::Mutex;
 
 use crate::game_logic::{self, BitIter, Bitboard};
 
-// ── 残差块 ────────────────────────────────────────
+// ── Residual Block ────────────────────────────────
 struct ResBlock {
     conv1: Conv2d,
     conv2: Conv2d,
@@ -47,7 +47,7 @@ impl ResBlock {
     }
 }
 
-// ── 完整模型 ──────────────────────────────────────
+// ── Full Model ───────────────────────────────────
 pub struct OthelloModel {
     conv_in: Conv2d,
     res1: ResBlock,
@@ -60,7 +60,7 @@ pub struct OthelloModel {
 
 impl OthelloModel {
 
-    /// 从字节数据直接加载模型（用于 Android 从 APK assets 加载）
+    /// Load model directly from byte data (for Android loading from APK assets)
     pub fn load_from_bytes(data: Vec<u8>) -> candle_core::Result<Self> {
         let device = Device::Cpu;
         let vb = VarBuilder::from_buffered_safetensors(data, DType::F32, &device)?;
@@ -97,7 +97,7 @@ impl OthelloModel {
         })
     }
 
-    /// 前向传播：评估局面，返回 f32 ∈ [-1, 1]
+    /// Forward pass: evaluates the board, returns f32 ∈ [-1, 1]
     fn forward(&self, black: Bitboard, white: Bitboard) -> candle_core::Result<f32> {
         let x = bitboards_to_tensor(black, white, &self.device)?;
         let x = self.conv_in.forward(&x)?.relu()?;
@@ -106,17 +106,17 @@ impl OthelloModel {
         let x = self.res3.forward(&x)?;
         let x = self.conv_out.forward(&x)?.flatten(1, 3)?; // [1, 1, 8, 8] → [1, 64]
         let x = self.fc.forward(&x)?.tanh()?;
-        // 提取标量值
+        // Extract scalar value
         let values = x.to_vec1::<f32>()?;
         Ok(values[0])
     }
 
-    /// 局面评估 (公开接口)
+    /// Board evaluation (public API)
     pub fn evaluate(&self, black: Bitboard, white: Bitboard) -> f32 {
         self.forward(black, white).unwrap_or(0.0)
     }
 
-    /// AI 最佳落子：遍历所有合法落子，选择评估分最高的走法
+    /// AI best move: iterates all legal moves and picks the one with highest evaluation score
     pub fn best_move(&self, black: Bitboard, white: Bitboard, is_black: bool) -> Option<u32> {
         let (player, opponent) = if is_black {
             (black, white)
@@ -148,10 +148,10 @@ impl OthelloModel {
     }
 }
 
-// ── 位棋盘 → Tensor 转换 ─────────────────────────
-/// 将两个 u64 位棋盘转为 [1, 2, 8, 8] 张量
-/// 位索引: bit 0=a1(LSB), bit 63=h8(MSB)
-/// 张量布局: channel 0=黑棋, channel 1=白棋, dim 2=行(rank1→8), dim 3=列(a→h)
+// ── Bitboard → Tensor Conversion ──────────────────
+/// Convert two u64 bitboards into a [1, 2, 8, 8] tensor
+/// Bit index: bit 0=a1(LSB), bit 63=h8(MSB)
+/// Tensor layout: channel 0=black, channel 1=white, dim 2=rows(rank1→8), dim 3=cols(a→h)
 fn bitboards_to_tensor(black: u64, white: u64, device: &Device) -> candle_core::Result<Tensor> {
     let data: Vec<f32> = (0..64)
         .map(|i| ((black >> i) & 1) as f32)
@@ -160,5 +160,5 @@ fn bitboards_to_tensor(black: u64, white: u64, device: &Device) -> candle_core::
     Tensor::from_vec(data, (1, 2, 8, 8), device)
 }
 
-// ── Tauri 托管状态 ───────────────────────────────
+// ── Tauri Managed State ───────────────────────────
 pub type AiState = Mutex<Option<OthelloModel>>;

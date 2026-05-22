@@ -1,32 +1,32 @@
-//! 数据库模块 — 对局记录存储与查询
-//! 使用 SQLite (rusqlite bundled) 持久化对局数据
+//! Database module — Game record storage and queries
+//! Uses SQLite (rusqlite bundled) for persistent game data
 
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-// ---------- 数据结构 ----------
+// ---------- Data Structures ----------
 
-/// 单步落子记录
+/// Single move record
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoveRecord {
     pub pos_index: u32,
     pub is_black_turn: bool,
 }
 
-/// 数据库中的一条对局记录
+/// A game record in the database
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameRecord {
     pub id: i64,
     pub black_score: u32,
     pub white_score: u32,
-    pub winner: Option<String>,   // "black" | "white" | null(平局)
+    pub winner: Option<String>,   // "black" | "white" | null(draw)
     pub moves: Vec<MoveRecord>,
     pub created_at: String,
 }
 
-/// 对局摘要（列表用，不含走法详情）
+/// Game summary (for list view, without move details)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameSummary {
     pub id: i64,
@@ -37,7 +37,7 @@ pub struct GameSummary {
     pub created_at: String,
 }
 
-/// 总胜负统计
+/// Overall win/loss stats
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameStats {
     pub total_games: u32,
@@ -46,7 +46,7 @@ pub struct GameStats {
     pub draws: u32,
 }
 
-// ---------- 数据库管理器 ----------
+// ---------- Database Manager ----------
 
 #[derive(Debug)]
 pub struct Database {
@@ -54,16 +54,16 @@ pub struct Database {
 }
 
 impl Database {
-    /// 打开（或创建）数据库，自动建表
+    /// Open (or create) the database, auto-create tables
     pub fn open(db_path: PathBuf) -> Result<Self, String> {
-        // 确保父目录存在
+        // Ensure parent directory exists
         if let Some(parent) = db_path.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|e| format!("无法创建数据库目录: {e}"))?;
+                .map_err(|e| format!("Failed to create database directory: {e}"))?;
         }
 
         let conn = Connection::open(&db_path)
-            .map_err(|e| format!("无法打开数据库: {e}"))?;
+            .map_err(|e| format!("Failed to open database: {e}"))?;
 
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS games (
@@ -74,14 +74,14 @@ impl Database {
                 moves       TEXT NOT NULL,
                 created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
             );"
-        ).map_err(|e| format!("建表失败: {e}"))?;
+        ).map_err(|e| format!("Failed to create table: {e}"))?;
 
         Ok(Database {
             conn: Mutex::new(conn),
         })
     }
 
-    /// 保存一局对局
+    /// Save a game record
     pub fn save_game(
         &self,
         black_score: u32,
@@ -90,27 +90,27 @@ impl Database {
         moves: Vec<MoveRecord>,
     ) -> Result<i64, String> {
         let moves_json = serde_json::to_string(&moves)
-            .map_err(|e| format!("序列化走法失败: {e}"))?;
+            .map_err(|e| format!("Failed to serialize moves: {e}"))?;
 
-        let conn = self.conn.lock().map_err(|e| format!("锁失败: {e}"))?;
+        let conn = self.conn.lock().map_err(|e| format!("Lock failed: {e}"))?;
         conn.execute(
             "INSERT INTO games (black_score, white_score, winner, moves)
              VALUES (?1, ?2, ?3, ?4)",
             params![black_score, white_score, winner, moves_json],
-        ).map_err(|e| format!("保存对局失败: {e}"))?;
+        ).map_err(|e| format!("Failed to save game: {e}"))?;
 
         Ok(conn.last_insert_rowid())
     }
 
-    /// 获取所有对局摘要列表（按时间倒序）
+    /// Get all game summaries (ordered by time descending)
     pub fn get_game_list(&self) -> Result<Vec<GameSummary>, String> {
-        let conn = self.conn.lock().map_err(|e| format!("锁失败: {e}"))?;
+        let conn = self.conn.lock().map_err(|e| format!("Lock failed: {e}"))?;
         let mut stmt = conn
             .prepare(
                 "SELECT id, black_score, white_score, winner, moves, created_at
                  FROM games ORDER BY id DESC"
             )
-            .map_err(|e| format!("查询失败: {e}"))?;
+            .map_err(|e| format!("Query failed: {e}"))?;
 
         let rows = stmt
             .query_map([], |row| {
@@ -126,18 +126,18 @@ impl Database {
                     created_at: row.get(5)?,
                 })
             })
-            .map_err(|e| format!("遍历结果失败: {e}"))?;
+            .map_err(|e| format!("Failed to iterate results: {e}"))?;
 
         let mut list = Vec::new();
         for row in rows {
-            list.push(row.map_err(|e| format!("读取行失败: {e}"))?);
+            list.push(row.map_err(|e| format!("Failed to read row: {e}"))?);
         }
         Ok(list)
     }
 
-    /// 根据 ID 获取单局完整记录（含走法，用于回放）
+    /// Get full game record by ID (includes moves for replay)
     pub fn get_game(&self, id: i64) -> Result<GameRecord, String> {
-        let conn = self.conn.lock().map_err(|e| format!("锁失败: {e}"))?;
+        let conn = self.conn.lock().map_err(|e| format!("Lock failed: {e}"))?;
         conn.query_row(
             "SELECT id, black_score, white_score, winner, moves, created_at
              FROM games WHERE id = ?1",
@@ -155,16 +155,16 @@ impl Database {
                     created_at: row.get(5)?,
                 })
             },
-        ).map_err(|e| format!("未找到对局 #{id}: {e}"))
+        ).map_err(|e| format!("Game #{id} not found: {e}"))
     }
 
-    /// 获取总胜负统计
+    /// Get overall win/loss stats
     pub fn get_stats(&self) -> Result<GameStats, String> {
-        let conn = self.conn.lock().map_err(|e| format!("锁失败: {e}"))?;
+        let conn = self.conn.lock().map_err(|e| format!("Lock failed: {e}"))?;
 
         let total: u32 = conn
             .query_row("SELECT COUNT(*) FROM games", [], |row| row.get(0))
-            .map_err(|e| format!("统计失败: {e}"))?;
+            .map_err(|e| format!("Stats query failed: {e}"))?;
 
         let black_wins: u32 = conn
             .query_row(
@@ -172,7 +172,7 @@ impl Database {
                 [],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("统计失败: {e}"))?;
+            .map_err(|e| format!("Stats query failed: {e}"))?;
 
         let white_wins: u32 = conn
             .query_row(
@@ -180,7 +180,7 @@ impl Database {
                 [],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("统计失败: {e}"))?;
+            .map_err(|e| format!("Stats query failed: {e}"))?;
 
         let draws: u32 = conn
             .query_row(
@@ -188,7 +188,7 @@ impl Database {
                 [],
                 |row| row.get(0),
             )
-            .map_err(|e| format!("统计失败: {e}"))?;
+            .map_err(|e| format!("Stats query failed: {e}"))?;
 
         Ok(GameStats {
             total_games: total,
@@ -198,11 +198,11 @@ impl Database {
         })
     }
 
-    /// 删除指定对局
+    /// Delete a specific game
     pub fn delete_game(&self, id: i64) -> Result<(), String> {
-        let conn = self.conn.lock().map_err(|e| format!("锁失败: {e}"))?;
+        let conn = self.conn.lock().map_err(|e| format!("Lock failed: {e}"))?;
         conn.execute("DELETE FROM games WHERE id = ?1", params![id])
-            .map_err(|e| format!("删除失败: {e}"))?;
+            .map_err(|e| format!("Delete failed: {e}"))?;
         Ok(())
     }
 }

@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
-// ── 子模块 ──────────────────────────────────────────
+// ── Sub-modules ──────────────────────────────────
 import type { GameState, FlipAnimation, MoveRecord } from "./othello/types";
 import { bb, cellBitIndex } from "./othello/helpers";
 import { drawBoard as renderBoard } from "./othello/renderer";
@@ -14,7 +14,7 @@ import { CELL_SIZE, PADDING } from "./othello/constants";
 // ═══════════════════════════════════════════════════
 
 export function useOthello() {
-  // ── 响应式状态 ──
+  // ── Reactive State ──
   const black = ref("0");
   const white = ref("0");
   const legalMoves = ref("0");
@@ -25,22 +25,22 @@ export function useOthello() {
   const winner = ref<string | null>(null);
   const errorMsg = ref("");
 
-  // ── 动画状态 ──
+  // ── Animation State ──
   const flipAnim = ref<FlipAnimation | null>(null);
   let cancelAnim: (() => void) | null = null;
 
-  // ── 回放状态 ──
+  // ── Replay State ──
   const isReplaying = ref(false);
   const replayingGameId = ref<number | null>(null);
   let replayTimerId: ReturnType<typeof setTimeout> | null = null;
 
-  // ── 走法记录（用于保存对局）──
+  // ── Move history (for saving games) ──
   const moveHistory: MoveRecord[] = [];
   let currentGameSaved = false;
 
   const canvasRef = ref<HTMLCanvasElement | null>(null);
 
-  // ── 组装 DrawBoardOptions ──
+  // ── Build DrawBoardOptions ──
   function buildDrawOptions(): DrawBoardOptions {
     const anim = flipAnim.value;
     return {
@@ -53,16 +53,16 @@ export function useOthello() {
     };
   }
 
-  // ── 棋盘绘制 ──
+  // ── Board Drawing ──
   function drawBoard() {
     const canvas = canvasRef.value;
     if (!canvas) return;
     renderBoard(canvas, buildDrawOptions());
   }
 
-  // ── 启动翻转动画 ──
+  // ── Start Flip Animation ──
   function startFlipAnimation(animData: FlipAnimation, finalState: GameState) {
-    // 取消之前的动画
+    // Cancel previous animation
     if (cancelAnim) cancelAnim();
 
     flipAnim.value = animData;
@@ -80,7 +80,7 @@ export function useOthello() {
     );
   }
 
-  // ── 应用状态 ──
+  // ── Apply State ──
   function applyState(s: GameState) {
     black.value = s.black;
     white.value = s.white;
@@ -94,7 +94,7 @@ export function useOthello() {
     drawBoard();
   }
 
-  // ── 开始游戏 ──
+  // ── Start Game ──
   async function startGame() {
     if (cancelAnim) {
       cancelAnim();
@@ -112,7 +112,7 @@ export function useOthello() {
     }
   }
 
-  // ── 棋盘点击处理 ──
+  // ── Board Click Handler ──
   async function handleClick(e: MouseEvent) {
     if (gameOver.value || flipAnim.value) return;
     const canvas = canvasRef.value;
@@ -170,7 +170,7 @@ export function useOthello() {
     }
   }
 
-  // ── AI 落子 ──
+  // ── AI Move ──
   const isAiThinking = ref(false);
   const playerSide = ref<"black" | "white">("black");
 
@@ -231,7 +231,7 @@ export function useOthello() {
     }
   }
 
-  // ── 回放功能 ──
+  // ── Replay Feature ──
   async function replayGame(moves: MoveRecord[], gameId: number) {
     stopReplay();
 
@@ -323,7 +323,7 @@ export function useOthello() {
     flipAnim.value = null;
   }
 
-  // ── 保存当前对局 ──
+  // ── Save Current Game ──
   async function saveCurrentGame(): Promise<boolean> {
     if (currentGameSaved) return false;
     if (moveHistory.length === 0) return false;
@@ -345,7 +345,7 @@ export function useOthello() {
     }
   }
 
-  // ── 联机对战：应用任意走法 ──
+  // ── Online Battle: Apply an arbitrary move ──
   async function applyMove(
     blackStr: string,
     whiteStr: string,
@@ -405,7 +405,7 @@ export function useOthello() {
     }
   }
 
-  // ── UI 辅助 ──
+  // ── UI Helpers ──
   function turnLabel(): string {
     return currentTurn.value === "black" ? "⚫ 黑方" : "⚪ 白方";
   }
@@ -416,7 +416,7 @@ export function useOthello() {
     return "平局";
   }
 
-  // ── 生命周期 ──
+  // ── Lifecycle ──
   onMounted(async () => {
     await nextTick();
     drawBoard();
@@ -427,7 +427,7 @@ export function useOthello() {
     stopReplay();
   });
 
-  // ── 导出 ──
+  // ── Exports ──
   return {
     black,
     white,
@@ -459,7 +459,7 @@ export function useOthello() {
 }
 
 // ═══════════════════════════════════════════════════
-//  统一导出口（保持原有导入路径不变）
+//  Unified exports (keep original import paths unchanged)
 // ═══════════════════════════════════════════════════
 
 export type { GameState, FlipAnimation, MoveRecord } from "./othello/types";

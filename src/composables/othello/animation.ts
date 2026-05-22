@@ -1,13 +1,13 @@
 import type { FlipAnimation, GameState } from "./types";
 
 /**
- * 运行翻转动画。
+ * Run a flip animation.
  *
- * @param animData    - 动画数据（会原地更新 progress）
- * @param finalState  - 动画完成后要应用的最终状态
- * @param drawFn      - 每次帧调用的绘制函数
- * @param applyFn     - 动画完成时调用的状态应用函数
- * @returns 取消函数，调用后可中止动画
+ * @param animData    - Animation data (progress will be updated in-place)
+ * @param finalState  - The final state to apply after animation completes
+ * @param drawFn      - Draw function called on each frame
+ * @param applyFn     - State apply function called when animation finishes
+ * @returns Cancel function; calling it aborts the animation
  */
 export function runFlipAnimation(
   animData: FlipAnimation,
@@ -48,9 +48,9 @@ export function runFlipAnimation(
 }
 
 /**
- * 创建回放专用的动画 Promise 版本。
- * 返回一个 Promise，在动画完成后 resolve。
- * 通过 `isActive` 函数判断回放是否仍在进行。
+ * Promise-based replay animation.
+ * Returns a Promise that resolves when animation completes.
+ * Uses `isActive` function to check whether replay is still active.
  */
 export function runReplayAnimation(
   animData: FlipAnimation,

@@ -1,7 +1,7 @@
 use crate::game_logic::{self, Bitboard};
 use serde::Serialize;
 
-// ---------- 响应结构体（u64 以字符串形式传递，避免 JS 精度丢失） ----------
+// ---------- Response struct (u64 passed as strings to avoid JS precision loss) ----------
 
 #[derive(Serialize, Clone)]
 pub struct GameStateResponse {
@@ -13,9 +13,9 @@ pub struct GameStateResponse {
     pub black_score: u32,
     pub white_score: u32,
     pub winner: Option<String>,
-    /// 本次落子翻转的棋子位板（以字符串形式传递）
+    /// Bitboard of pieces flipped by this move (passed as string)
     pub flips: String,
-    /// AI 落子位置索引（仅 ai_move 命令使用）
+    /// AI move position index (only used by ai_move command)
     pub ai_move_index: Option<u32>,
 }
 
@@ -32,12 +32,12 @@ impl GameStateResponse {
             (white, black)
         };
 
-        // 计算当前方合法落子；同时判断游戏是否结束（避免重复调用 is_game_over）
+        // Compute legal moves for current side; also determine if game is over (avoid repeated is_game_over calls)
         let legal = game_logic::compute_legal_moves(player, opponent);
         let game_over = if legal != 0 {
-            false // 当前方有合法落子 → 游戏继续
+            false // current side has legal move → game continues
         } else {
-            // 当前方无合法落子 → 检查对方是否也无合法落子
+            // current side has no legal move → check if opponent also has no legal move
             !game_logic::has_legal_move(opponent, player)
         };
 

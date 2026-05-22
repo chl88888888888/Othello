@@ -1,11 +1,11 @@
-//! 黑白棋 — Hyperbola Quintessence 实现
-//! 核心 bitboard 操作库：落子翻转、合法落子检测、胜负判定
+//! Othello — Hyperbola Quintessence implementation
+//! Core bitboard operation library: move flipping, legal move detection, win/loss determination
 
 pub type Bitboard = u64;
 
-// ---------- 位迭代器 ----------
+// ---------- Bit Iterator ----------
 
-/// 迭代 bitboard 中所有置位的索引 (0-63)
+/// Iterate over the indices (0-63) of all set bits in the bitboard
 pub struct BitIter(pub u64);
 
 impl Iterator for BitIter {
@@ -21,13 +21,13 @@ impl Iterator for BitIter {
     }
 }
 
-// ---------- 边界掩码 ----------
+// ---------- Border Masks ----------
 const FILE_A: Bitboard = 0x0101010101010101;
 const FILE_H: Bitboard = 0x8080808080808080;
 const RANK_1: Bitboard = 0x00000000000000FF;
 const RANK_8: Bitboard = 0xFF00000000000000;
 
-// ---------- 方向定义 ----------
+// ---------- Direction Definitions ----------
 struct Dir {
     shift: i32,
     mask: Bitboard,
@@ -68,7 +68,7 @@ const DIRECTIONS: [Dir; 8] = [
     },
 ];
 
-// ---------- 安全位移 ----------
+// ---------- Safe Shift ----------
 fn shift(b: Bitboard, shift: i32) -> Bitboard {
     if shift > 0 {
         b.wrapping_shl(shift as u32)
@@ -77,7 +77,7 @@ fn shift(b: Bitboard, shift: i32) -> Bitboard {
     }
 }
 
-// ---------- 单方向翻转 ----------
+// ---------- Single Direction Flip ----------
 fn flip_one_dir(pos: Bitboard, own: Bitboard, opponent: Bitboard, dir: &Dir) -> Bitboard {
     let mut flips: Bitboard = 0;
     let mut p = pos;
@@ -94,41 +94,41 @@ fn flip_one_dir(pos: Bitboard, own: Bitboard, opponent: Bitboard, dir: &Dir) -> 
     0
 }
 
-// ---------- 全方向总翻转 ----------
-/// 计算在 `pos` 落子后，会翻转的对方棋子 bitboard
+// ---------- Total Flips (All Directions) ----------
+/// Compute the bitboard of opponent pieces that would be flipped by placing at `pos`
 pub fn compute_flips(pos: Bitboard, own: Bitboard, opponent: Bitboard) -> Bitboard {
     DIRECTIONS
         .iter()
         .fold(0, |total, dir| total | flip_one_dir(pos, own, opponent, dir))
 }
 
-// ---------- 合法落子点检测 ----------
+// ---------- Legal Move Detection ----------
 fn empty_squares(player: Bitboard, opponent: Bitboard) -> Bitboard {
     !(player | opponent)
 }
 
-/// 判断当前玩家是否有合法落子
+/// Check if the current player has any legal move
 pub fn has_legal_move(player: Bitboard, opponent: Bitboard) -> bool {
     BitIter(empty_squares(player, opponent))
         .any(|idx| compute_flips(1u64 << idx, player, opponent) != 0)
 }
 
-/// 计算所有合法落子位置，返回 bitboard（每位代表一个可落子位置）
+/// Compute all legal move positions, returning a bitboard (each bit represents a legal position)
 pub fn compute_legal_moves(player: Bitboard, opponent: Bitboard) -> Bitboard {
     BitIter(empty_squares(player, opponent))
         .filter(|&idx| compute_flips(1u64 << idx, player, opponent) != 0)
         .fold(0, |acc, idx| acc | (1u64 << idx))
 }
 
-// ---------- 执行落子 ----------
-/// 在 `pos` 落子，同时翻转被夹对方棋子。`player`/`opponent` 会被原地修改
+// ---------- Execute Move ----------
+/// Place a piece at `pos`, flipping captured opponent pieces. `player`/`opponent` are modified in place
 pub fn make_move(player: &mut Bitboard, opponent: &mut Bitboard, pos: Bitboard) {
     let flips = compute_flips(pos, *player, *opponent);
     *player ^= pos | flips;
     *opponent ^= flips;
 }
 
-/// 使用预计算的 flips 执行落子，避免重复计算
+/// Execute a move using pre-computed flips to avoid redundant calculation
 pub fn make_move_with_flips(
     player: &mut Bitboard,
     opponent: &mut Bitboard,
@@ -139,25 +139,25 @@ pub fn make_move_with_flips(
     *opponent ^= flips;
 }
 
-// ---------- 辅助函数 ----------
-/// 将棋盘坐标转为 bitboard（例如 `sq('d', 5)` → d5 对应的位）
+// ---------- Helper Functions ----------
+/// Convert board coordinate to bitboard (e.g. `sq('d', 5)` → the bit for d5)
 pub fn sq(file: char, rank: u8) -> Bitboard {
     let f = (file as u8 - b'a') as u32;
     let r = (rank - 1) as u32;
     1u64 << (r * 8 + f)
 }
 
-/// 批量坐标 → bitboard
+/// Batch coordinates → bitboard
 pub fn squares(specs: &[(char, u8)]) -> Bitboard {
     specs.iter().fold(0, |acc, &(f, r)| acc | sq(f, r))
 }
 
-/// 索引 → bitboard（index: 0=a1, 7=h1, 56=a8, 63=h8）
+/// Index → bitboard (index: 0=a1, 7=h1, 56=a8, 63=h8)
 pub fn index_to_bitboard(index: u32) -> Bitboard {
     1u64 << index
 }
 
-// ---------- 胜负判断 ----------
+// ---------- Win/Loss Determination ----------
 #[derive(Debug, PartialEq)]
 pub enum GameResult {
     BlackWin(u32, u32),
@@ -165,7 +165,7 @@ pub enum GameResult {
     Draw(u32),
 }
 
-/// 双方都无法落子时，比较棋子个数判定胜负
+/// When neither side can move, compare piece counts to determine the winner
 pub fn judge_winner(black: Bitboard, white: Bitboard) -> GameResult {
     let bc = black.count_ones();
     let wc = white.count_ones();
@@ -176,7 +176,7 @@ pub fn judge_winner(black: Bitboard, white: Bitboard) -> GameResult {
     }
 }
 
-/// 初始棋盘
+/// Initial board setup
 pub fn initial_board() -> (Bitboard, Bitboard) {
     let black = squares(&[('d', 5), ('e', 4)]);
     let white = squares(&[('d', 4), ('e', 5)]);

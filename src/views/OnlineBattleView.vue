@@ -29,14 +29,14 @@ const {
   winnerLabel,
 } = useOthello();
 
-// ── 页面状态机 ──────────────────────────────────
+// ── Page state machine ────────────────────────────
 type PageState = "connecting" | "matching" | "playing" | "finished";
 const pageState = ref<PageState>("connecting");
 const myColor = ref<"black" | "white" | null>(null);
 
 let unlisten: UnlistenFn | null = null;
 
-// ── 服务器消息处理 ─────────────────────────────ws─
+// ── Server message handling ───────────────────────
 interface ServerMsg {
   type: string;
   pos?: number;
@@ -93,14 +93,14 @@ async function handleServerEvent(event: { payload: string }) {
   }
 }
 
-// ── 用户操作 ──────────────────────────────────
+// ── User actions ─────────────────────────────────
 
 async function autoConnectAndMatch() {
   errorMsg.value = "";
   pageState.value = "connecting";
   try {
     await invoke("connect_server");
-    // 连接成功后自动开始匹配
+    // Auto-start matching after connection
     pageState.value = "matching";
     if (unlisten) unlisten();
     unlisten = await listen<string>("match_event", handleServerEvent);
@@ -121,7 +121,7 @@ async function retryMatching() {
   }
 }
 
-// ── 棋盘点击（联机版）──────────────────────────
+// ── Board click (online version) ──────────────────
 function bb(s: string): bigint {
   try {
     return BigInt(s);
@@ -153,7 +153,7 @@ async function onBoardClick(e: MouseEvent) {
 
   const bitIndex = cellBitIndex(row, col);
 
-  // 粗略检查：该位置已有棋子
+  // Rough check: position already occupied
   if ((bb(black.value) >> BigInt(bitIndex)) & 1n) return;
   if ((bb(white.value) >> BigInt(bitIndex)) & 1n) return;
 
@@ -165,7 +165,7 @@ async function onBoardClick(e: MouseEvent) {
   );
 
   if (result) {
-    // 本地落子成功 → 发送到服务器
+    // Local move succeeded → send to server
     try {
       await invoke("online_send_move", { posIndex: bitIndex });
     } catch (e) {
@@ -174,7 +174,7 @@ async function onBoardClick(e: MouseEvent) {
   }
 }
 
-// ── 认输 ─────────────────────────────────────
+// ── Give up ──────────────────────────────────────
 async function giveUp() {
   try {
     await invoke("online_give_up");
@@ -198,11 +198,11 @@ function cleanup() {
   invoke("disconnect_server").catch(() => {});
 }
 
-// ── 生命周期 ──────────────────────────────────
+// ── Lifecycle ────────────────────────────────────
 onMounted(async () => {
   await nextTick();
   drawBoard();
-  // 自动连接服务器并开始匹配
+  // Auto-connect and start matching
   await autoConnectAndMatch();
 });
 
@@ -213,14 +213,14 @@ onUnmounted(() => {
 
 <template>
   <div class="online-root">
-    <!-- ═══ 顶栏 ═══ -->
+    <!-- Top bar -->
     <div class="top-bar">
       <button class="back-btn" @click="goBack">← 返回</button>
       <h1 class="page-title">联网对战</h1>
       <div class="spacer"></div>
     </div>
 
-    <!-- ═══ 状态栏（对局中显示） ═══ -->
+    <!-- Info bar (shown during gameplay) -->
     <div
       v-if="pageState === 'playing' || pageState === 'finished'"
       class="info-bar"
@@ -253,7 +253,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- ═══ 棋盘 ═══ -->
+    <!-- Board -->
     <canvas
       ref="canvasRef"
       class="board-canvas"
@@ -264,7 +264,7 @@ onUnmounted(() => {
       @click="onBoardClick"
     ></canvas>
 
-    <!-- ═══ 连接中 ═══ -->
+    <!-- Connecting -->
     <div v-if="pageState === 'connecting'" class="panel matching-panel">
       <div class="spinner"></div>
       <p class="matching-text">正在连接服务器...</p>
@@ -273,7 +273,7 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- ═══ 匹配面板 ═══ -->
+    <!-- Matching panel -->
     <div v-if="pageState === 'matching'" class="panel matching-panel">
       <div class="spinner"></div>
       <p class="matching-text">正在寻找对手...</p>
@@ -284,7 +284,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- ═══ 对局操作按钮 ═══ -->
+    <!-- Game action buttons -->
     <div v-if="pageState === 'playing' && !gameOver" class="bottom-bar">
       <button class="action-btn danger" @click="giveUp">🏳️ 认输</button>
     </div>
@@ -297,7 +297,7 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- ═══ 错误信息 ═══ -->
+    <!-- Error message -->
     <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
   </div>
 </template>
@@ -313,7 +313,7 @@ onUnmounted(() => {
   overflow-x: hidden;
 }
 
-/* ── 顶栏 ── */
+/* ── Top bar ── */
 .top-bar {
   display: flex;
   align-items: center;
@@ -353,7 +353,7 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-/* ── 信息栏 ── */
+/* ── Info bar ── */
 .info-bar {
   display: flex;
   align-items: center;
@@ -400,7 +400,7 @@ onUnmounted(() => {
   color: #666;
 }
 
-/* ── 棋盘 ── */
+/* ── Board ── */
 .board-canvas {
   border-radius: 12px;
   cursor: default;
@@ -413,7 +413,7 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* ── 面板 ── */
+/* ── Panels ── */
 .panel {
   display: flex;
   flex-direction: column;
@@ -461,7 +461,7 @@ onUnmounted(() => {
   margin: 0;
 }
 
-/* ── 匹配中 ── */
+/* ── Matching spinner ── */
 .spinner {
   width: 36px;
   height: 36px;
@@ -488,7 +488,7 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-/* ── 按钮 ── */
+/* ── Buttons ── */
 .action-btn {
   padding: 8px 18px;
   font-size: clamp(0.8rem, 2.4vw, 0.95rem);
@@ -527,7 +527,7 @@ onUnmounted(() => {
   background: #a04040;
 }
 
-/* ── 底部 ── */
+/* ── Bottom bar ── */
 .bottom-bar {
   display: flex;
   justify-content: center;

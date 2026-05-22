@@ -1,4 +1,4 @@
-// ── 类型定义 ──────────────────────────────────────────
+// ── Type Definitions ────────────────────────────────
 export interface GameState {
   black: string;
   white: string;
@@ -22,7 +22,7 @@ export interface FlipAnimation {
   preWhite: bigint;
 }
 
-/** 回放用的走法记录 */
+/** Move record for replay */
 export interface MoveRecord {
   pos_index: number;
   is_black_turn: boolean;

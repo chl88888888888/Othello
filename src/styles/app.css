@@ -1,4 +1,4 @@
-/* ── 全局重置 ── */
+/* ── Global Reset ── */
 *,
 *::before,
 *::after {
@@ -18,7 +18,7 @@ body {
   background: #1c1c1c;
   color: #e0e0e0;
   font-family: "Segoe UI", "PingFang SC", sans-serif;
-  /* 适配安卓安全区 */
+  /* Adapt to Android safe area */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);

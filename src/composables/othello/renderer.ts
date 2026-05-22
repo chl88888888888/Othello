@@ -2,7 +2,7 @@ import type { FlipAnimation } from "./types";
 import { CELL_SIZE, PADDING, BOARD_PX } from "./constants";
 import { cellBitIndex, easeInOutCubic, easeOutBack, rgbScale } from "./helpers";
 
-// ── 基础棋子绘制 ───────────────────────────────────
+// ── Basic Piece Drawing ────────────────────────────
 
 export function drawPiece(
   ctx: CanvasRenderingContext2D,
@@ -43,7 +43,7 @@ export function drawPiece(
   ctx.restore();
 }
 
-/** 在原点 (0,0) 画棋子（配合 translate 使用） */
+/** Draw a piece at origin (0,0) (for use with translate) */
 export function drawPieceAt(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -84,7 +84,7 @@ export function drawPieceAt(
   ctx.restore();
 }
 
-/** 绘制翻转中的棋子：水平缩放模拟 3D 翻转 */
+/** Draw a flipping piece: horizontal scale simulates 3D flip */
 export function drawFlippingPiece(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -115,7 +115,7 @@ export function drawFlippingPiece(
   ctx.restore();
 }
 
-/** 新落子弹入动画 */
+/** New piece pop-in animation */
 export function drawNewPiecePop(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -134,7 +134,7 @@ export function drawNewPiecePop(
   ctx.restore();
 }
 
-// ── 棋盘绘制参数 ───────────────────────────────────
+// ── Board Drawing Options ───────────────────────────
 
 export interface DrawBoardOptions {
   blackBits: bigint;
@@ -145,7 +145,7 @@ export interface DrawBoardOptions {
   anim: FlipAnimation | null;
 }
 
-/** 绘制整个棋盘（纯函数，不依赖任何外部状态） */
+/** Draw the entire board (pure function, does not depend on any external state) */
 export function drawBoard(
   canvas: HTMLCanvasElement,
   options: DrawBoardOptions,
@@ -154,29 +154,29 @@ export function drawBoard(
 
   const dpr = window.devicePixelRatio || 1;
 
-  // 自适应屏幕宽度：棋盘最大 456px，但不超过视口宽度减去内边距
+  // Responsive width: board max 456px, but no wider than viewport minus padding
   const maxDisplayWidth = Math.min(window.innerWidth - 32, BOARD_PX);
   const displaySize = Math.floor(maxDisplayWidth);
 
-  // Canvas 内部渲染保持全分辨率
+  // Canvas internal rendering stays at full resolution
   canvas.width = Math.floor(BOARD_PX * dpr);
   canvas.height = Math.floor(BOARD_PX * dpr);
-  // CSS 显示尺寸自适应
+  // CSS display size adapts to screen
   canvas.style.width = displaySize + "px";
   canvas.style.height = displaySize + "px";
 
   const ctx = canvas.getContext("2d")!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // 棋盘底色
+  // Board background
   ctx.fillStyle = "#1a6b3c";
   ctx.fillRect(0, 0, BOARD_PX, BOARD_PX);
 
-  // 棋盘木纹背景
+  // Board wood-grain background
   ctx.fillStyle = "#1e7e46";
   ctx.fillRect(PADDING, PADDING, CELL_SIZE * 8, CELL_SIZE * 8);
 
-  // 网格
+  // Grid lines
   ctx.strokeStyle = "#0d3d1f";
   ctx.lineWidth = 1;
   for (let i = 0; i <= 8; i++) {
@@ -191,7 +191,7 @@ export function drawBoard(
     ctx.stroke();
   }
 
-  // 星位标记
+  // Star point markers
   const dots = [
     [2, 2],
     [2, 6],
@@ -207,7 +207,7 @@ export function drawBoard(
     ctx.fill();
   }
 
-  // 逐格绘制棋子 / 提示
+  // Draw pieces / hints cell by cell
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
       const idx = cellBitIndex(row, col);

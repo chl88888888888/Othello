@@ -23,7 +23,7 @@ const {
   saveCurrentGame,
 } = useOthello();
 
-// ── 选边状态 ──
+// ── Side selection state ──
 const showSidePicker = ref(true);
 const pickingSide = ref(false);
 
@@ -38,20 +38,20 @@ function showPicker() {
   showSidePicker.value = true;
 }
 
-// ── AI 自动落子 ──
+// ── AI auto-move ──
 let aiTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch([currentTurn, gameOver, flipAnim, playerSide, showSidePicker], async ([turn, over, anim, side, picker]) => {
   if (over || anim || picker) return;
   if (turn !== side && !isAiThinking.value) {
-    // AI 的回合，延迟片刻后自动落子
+    // AI's turn, auto-move after a short delay
     aiTimer = setTimeout(async () => {
       await requestAiMove();
     }, 400);
   }
 });
 
-// ── 人类落子（包装：阻止非己方回合点击）──
+// ── Human move (wrapper: prevent clicks during opponent's turn) ──
 function onBoardClick(e: MouseEvent) {
   if (showSidePicker.value) return;
   if (currentTurn.value !== playerSide.value) return;
@@ -59,13 +59,13 @@ function onBoardClick(e: MouseEvent) {
   handleClick(e);
 }
 
-// ── 新游戏 ──
+// ── New game ──
 function newGame() {
   if (aiTimer) clearTimeout(aiTimer);
   showPicker();
 }
 
-// ── 对局结束时自动保存 ──
+// ── Auto-save when game ends ──
 watch(gameOver, async (over) => {
   if (over) {
     await saveCurrentGame();
@@ -80,14 +80,14 @@ function goBack() {
 
 <template>
   <div class="ai-root">
-    <!-- 顶栏 -->
+    <!-- Top bar -->
     <div class="top-bar">
       <button class="back-btn" @click="goBack">← 返回</button>
       <h1 class="page-title">人机对战</h1>
       <div class="spacer"></div>
     </div>
 
-    <!-- 选边面板 -->
+    <!-- Side picker panel -->
     <div class="side-picker" v-if="showSidePicker && !pickingSide">
       <p class="picker-label">选择你的执子方：</p>
       <div class="picker-buttons">
@@ -102,7 +102,7 @@ function goBack() {
       </div>
     </div>
 
-    <!-- 状态栏 -->
+    <!-- Info bar -->
     <div class="info-bar">
       <div class="score black-score">
         <span class="piece-icon">⚫</span>
@@ -131,7 +131,7 @@ function goBack() {
       </div>
     </div>
 
-    <!-- 棋盘 -->
+    <!-- Board -->
     <canvas
       ref="canvasRef"
       class="board-canvas"
@@ -139,7 +139,7 @@ function goBack() {
       @click="onBoardClick"
     ></canvas>
 
-    <!-- 底部 -->
+    <!-- Bottom bar -->
     <div class="bottom-bar">
       <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
       <div class="bottom-buttons">
@@ -165,7 +165,7 @@ function goBack() {
   overflow-x: hidden;
 }
 
-/* ── 顶栏 ── */
+/* ── Top bar ── */
 .top-bar {
   display: flex;
   align-items: center;
@@ -206,7 +206,7 @@ function goBack() {
   flex-shrink: 0;
 }
 
-/* ── 选边面板 ── */
+/* ── Side picker panel ── */
 .side-picker {
   display: flex;
   flex-direction: column;
@@ -267,7 +267,7 @@ function goBack() {
   font-size: 1.8rem;
 }
 
-/* ── 信息栏 ── */
+/* ── Info bar ── */
 .info-bar {
   display: flex;
   align-items: center;
@@ -313,7 +313,7 @@ function goBack() {
   margin-left: 4px;
 }
 
-/* ── 棋盘 ── */
+/* ── Board ── */
 .board-canvas {
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
@@ -328,7 +328,7 @@ function goBack() {
   box-shadow: 0 4px 20px rgba(100, 140, 255, 0.25);
 }
 
-/* ── 底部 ── */
+/* ── Bottom bar ── */
 .bottom-bar {
   margin-top: 10px;
   display: flex;

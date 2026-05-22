@@ -6,7 +6,7 @@ import { useOthello, type MoveRecord } from "../composables/useOthello";
 
 const router = useRouter();
 
-// ── 数据库类型 ──
+// ── Database types ──
 interface GameSummary {
   id: number;
   black_score: number;
@@ -32,7 +32,7 @@ interface GameStats {
   draws: number;
 }
 
-// ── 回放 composable ──
+// ── Replay composable ──
 const {
   blackScore,
   whiteScore,
@@ -48,13 +48,13 @@ const {
   drawBoard,
 } = useOthello();
 
-// ── 响应式数据 ──
+// ── Reactive data ──
 const gameList = ref<GameSummary[]>([]);
 const stats = ref<GameStats>({ total_games: 0, black_wins: 0, white_wins: 0, draws: 0 });
 const loading = ref(true);
 const replayError = ref("");
 
-// ── 加载数据 ──
+// ── Load data ──
 async function loadData() {
   loading.value = true;
   try {
@@ -71,7 +71,7 @@ async function loadData() {
   }
 }
 
-// ── 回放对局 ──
+// ── Replay game ──
 async function playGame(summary: GameSummary) {
   replayError.value = "";
   try {
@@ -82,7 +82,7 @@ async function playGame(summary: GameSummary) {
   }
 }
 
-// ── 删除对局 ──
+// ── Delete game ──
 async function deleteGame(id: number) {
   if (!confirm(`确定要删除对局 #${id} 吗？`)) return;
   try {
@@ -93,7 +93,7 @@ async function deleteGame(id: number) {
   }
 }
 
-// ── 停止回放 ──
+// ── Stop replay ──
 function handleStopReplay() {
   stopReplay();
 }
@@ -103,7 +103,7 @@ function goBack() {
   router.push("/");
 }
 
-// ── 辅助 ──
+// ── Helpers ──
 function winnerText(w: string | null): string {
   if (w === "black") return "黑胜";
   if (w === "white") return "白胜";
@@ -117,7 +117,7 @@ function winnerClass(w: string | null): string {
 }
 
 function formatTime(ts: string): string {
-  // created_at 格式: "YYYY-MM-DD HH:MM:SS"
+  // created_at format: "YYYY-MM-DD HH:MM:SS"
   return ts.replace("T", " ").substring(0, 19);
 }
 
@@ -129,14 +129,14 @@ onMounted(async () => {
 
 <template>
   <div class="history-root">
-    <!-- 顶栏 -->
+    // Top bar
     <div class="top-bar">
       <button class="back-btn" @click="goBack">← 返回</button>
       <h1 class="page-title">历史查询</h1>
       <div class="spacer"></div>
     </div>
 
-    <!-- ── 总胜负统计 ── -->
+    <!-- Stats panel -->
     <div class="stats-panel">
       <div class="stat-item">
         <span class="stat-value">{{ stats.total_games }}</span>
@@ -156,7 +156,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- ── 回放区域 ── -->
+    <!-- Replay section -->
     <div v-show="isReplaying" class="replay-section">
       <div class="replay-header">
         <span class="replay-badge">▶ 正在回放 #{{ replayingGameId }}</span>
@@ -170,7 +170,7 @@ onMounted(async () => {
       <canvas ref="canvasRef" class="board-canvas"></canvas>
     </div>
 
-    <!-- ── 对局列表 ── -->
+    <!-- Game list -->
     <div class="list-section">
       <div class="list-header">
         <h2>对局记录</h2>
@@ -182,14 +182,14 @@ onMounted(async () => {
       <p v-if="replayError" class="error-msg">{{ replayError }}</p>
       <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
 
-      <!-- 空状态 -->
+      <!-- Empty state -->
       <div v-if="!loading && gameList.length === 0" class="empty-state">
         <span class="empty-icon">📭</span>
         <p>暂无对局记录</p>
         <p class="empty-hint">完成一局人机对战后会自动保存</p>
       </div>
 
-      <!-- 列表 -->
+      <!-- List -->
       <div v-else class="game-list">
         <div
           v-for="g in gameList"
@@ -238,7 +238,7 @@ onMounted(async () => {
   overflow-x: hidden;
 }
 
-/* ── 顶栏 ── */
+/* ── Top bar ── */
 .top-bar {
   display: flex;
   align-items: center;
@@ -279,7 +279,7 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-/* ── 统计面板 ── */
+/* ── Stats panel ── */
 .stats-panel {
   display: flex;
   gap: 6px;
@@ -323,7 +323,7 @@ onMounted(async () => {
   color: #aaa;
 }
 
-/* ── 回放区域 ── */
+/* ── Replay section ── */
 .replay-section {
   width: 100%;
   max-width: 100%;
@@ -389,7 +389,7 @@ onMounted(async () => {
   height: auto;
 }
 
-/* ── 列表区域 ── */
+/* ── List section ── */
 .list-section {
   width: 100%;
   max-width: 100%;
@@ -431,7 +431,7 @@ onMounted(async () => {
   margin: 6px 0;
 }
 
-/* ── 空状态 ── */
+/* ── Empty state ── */
 .empty-state {
   text-align: center;
   padding: 30px 16px;
@@ -450,7 +450,7 @@ onMounted(async () => {
   margin-top: 4px;
 }
 
-/* ── 对局卡片 ── */
+/* ── Game cards ── */
 .game-list {
   display: flex;
   flex-direction: column;
