@@ -46,6 +46,17 @@ pub struct GameStats {
     pub draws: u32,
 }
 
+// ---------- Schema ────────────────────────────────
+
+const CREATE_TABLE_SQL: &str = "CREATE TABLE IF NOT EXISTS games (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    black_score INTEGER NOT NULL,
+    white_score INTEGER NOT NULL,
+    winner      TEXT,
+    moves       TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);";
+
 // ---------- Database Manager ----------
 
 #[derive(Debug)]
@@ -65,16 +76,22 @@ impl Database {
         let conn = Connection::open(&db_path)
             .map_err(|e| format!("Failed to open database: {e}"))?;
 
-        conn.execute_batch(
-            "CREATE TABLE IF NOT EXISTS games (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                black_score INTEGER NOT NULL,
-                white_score INTEGER NOT NULL,
-                winner      TEXT,
-                moves       TEXT NOT NULL,
-                created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
-            );"
-        ).map_err(|e| format!("Failed to create table: {e}"))?;
+        conn.execute_batch(CREATE_TABLE_SQL)
+            .map_err(|e| format!("Failed to create table: {e}"))?;
+
+        Ok(Database {
+            conn: Mutex::new(conn),
+        })
+    }
+
+    /// Open an in-memory database (for testing, no filesystem needed)
+    #[allow(dead_code)]
+    pub fn open_in_memory() -> Result<Self, String> {
+        let conn = Connection::open_in_memory()
+            .map_err(|e| format!("Failed to open in-memory database: {e}"))?;
+
+        conn.execute_batch(CREATE_TABLE_SQL)
+            .map_err(|e| format!("Failed to create table: {e}"))?;
 
         Ok(Database {
             conn: Mutex::new(conn),
