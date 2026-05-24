@@ -134,13 +134,13 @@ impl OthelloModel {
         BitIter(legal)
             .map(|pos_idx| {
                 let pos = 1u64 << pos_idx;
-                let (mut sim_black, mut sim_white) = (black, white);
-                if is_black {
-                    game_logic::make_move(&mut sim_black, &mut sim_white, pos);
+                let (mut sim_player, mut sim_opponent) = (player, opponent);
+                game_logic::make_move(&mut sim_player, &mut sim_opponent, pos);
+                let score = if is_black {
+                    self.evaluate(sim_player, sim_opponent)
                 } else {
-                    game_logic::make_move(&mut sim_white, &mut sim_black, pos);
-                }
-                let score = self.evaluate(sim_black, sim_white) * score_sign;
+                    self.evaluate(sim_opponent, sim_player)
+                } * score_sign;
                 (pos_idx, score)
             })
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Less))

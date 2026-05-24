@@ -101,8 +101,11 @@ fn build_next_state(
     just_black: bool,
     flips: Bitboard,
 ) -> GameStateResponse {
-    let just_moved = if just_black { "black" } else { "white" };
-    let next_turn = if just_black { "white" } else { "black" };
+    let (just_moved, next_turn) = if just_black {
+        ("black", "white")
+    } else {
+        ("white", "black")
+    };
     let (next_player, next_opponent) = if just_black {
         (white, black)
     } else {
@@ -160,13 +163,11 @@ fn ai_move(
 
     let flips = game_logic::compute_flips(pos, ai_player, ai_opponent);
 
-    let (player, opponent): (&mut Bitboard, &mut Bitboard) = if is_black_turn {
-        (&mut b, &mut w)
+    if is_black_turn {
+        game_logic::make_move_with_flips(&mut b, &mut w, pos, flips);
     } else {
-        (&mut w, &mut b)
-    };
-
-    game_logic::make_move_with_flips(player, opponent, pos, flips);
+        game_logic::make_move_with_flips(&mut w, &mut b, pos, flips);
+    }
 
     let mut resp = build_next_state(b, w, is_black_turn, flips);
     resp.ai_move_index = Some(pos_idx);
