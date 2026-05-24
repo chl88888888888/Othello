@@ -5,9 +5,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import {
   useOthello,
-  CELL_SIZE,
-  PADDING,
-  cellBitIndex,
+  bb,
+  canvasToBitIndex,
 } from "../composables/useOthello";
 
 const router = useRouter();
@@ -122,13 +121,6 @@ async function retryMatching() {
 }
 
 // ── Board click (online version) ──────────────────
-function bb(s: string): bigint {
-  try {
-    return BigInt(s);
-  } catch {
-    return 0n;
-  }
-}
 
 async function onBoardClick(e: MouseEvent) {
   if (pageState.value !== "playing") return;
@@ -139,19 +131,8 @@ async function onBoardClick(e: MouseEvent) {
   const canvas = canvasRef.value;
   if (!canvas) return;
 
-  const rect = canvas.getBoundingClientRect();
-  const scaleX =
-    canvas.width / (rect.width * (window.devicePixelRatio || 1));
-  const scaleY =
-    canvas.height / (rect.height * (window.devicePixelRatio || 1));
-  const x = (e.clientX - rect.left) * scaleX;
-  const y = (e.clientY - rect.top) * scaleY;
-
-  const col = Math.floor((x - PADDING) / CELL_SIZE);
-  const row = Math.floor((y - PADDING) / CELL_SIZE);
-  if (col < 0 || col > 7 || row < 0 || row > 7) return;
-
-  const bitIndex = cellBitIndex(row, col);
+  const bitIndex = canvasToBitIndex(canvas, e);
+  if (bitIndex < 0) return;
 
   // Rough check: position already occupied
   if ((bb(black.value) >> BigInt(bitIndex)) & 1n) return;

@@ -4,45 +4,6 @@ import { cellBitIndex, easeInOutCubic, easeOutBack, rgbScale } from "./helpers";
 
 // ── Basic Piece Drawing ────────────────────────────
 
-export function drawPiece(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  r: number,
-  side: "black" | "white",
-) {
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.35)";
-  ctx.shadowBlur = 4;
-  ctx.shadowOffsetX = 1;
-  ctx.shadowOffsetY = 2;
-
-  const grad = ctx.createRadialGradient(
-    cx - r * 0.3,
-    cy - r * 0.3,
-    r * 0.05,
-    cx,
-    cy,
-    r,
-  );
-
-  if (side === "black") {
-    grad.addColorStop(0, "#4a4a4a");
-    grad.addColorStop(0.7, "#1a1a1a");
-    grad.addColorStop(1, "#050505");
-  } else {
-    grad.addColorStop(0, "#ffffff");
-    grad.addColorStop(0.6, "#e8e8e8");
-    grad.addColorStop(1, "#b0b0b0");
-  }
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.restore();
-}
-
 /** Draw a piece at origin (0,0) (for use with translate) */
 export function drawPieceAt(
   ctx: CanvasRenderingContext2D,
@@ -82,6 +43,17 @@ export function drawPieceAt(
   ctx.fillStyle = grad;
   ctx.fill();
   ctx.restore();
+}
+
+/** Delegates to drawPieceAt with full brightness */
+export function drawPiece(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  side: "black" | "white",
+) {
+  drawPieceAt(ctx, cx, cy, r, side, 1);
 }
 
 /** Draw a flipping piece: horizontal scale simulates 3D flip */

@@ -1,4 +1,12 @@
-/* ── Global Reset ── */
+/* ── Prevent canvas tap highlight ── */
+canvas {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  outline: none;
+  -webkit-touch-callout: none;
+}
+
 *,
 *::before,
 *::after {

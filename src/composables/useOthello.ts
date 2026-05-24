@@ -3,11 +3,10 @@ import { invoke } from "@tauri-apps/api/core";
 
 // ── Sub-modules ──────────────────────────────────
 import type { GameState, FlipAnimation, MoveRecord } from "./othello/types";
-import { bb, cellBitIndex } from "./othello/helpers";
+import { bb, canvasToBitIndex } from "./othello/helpers";
 import { drawBoard as renderBoard } from "./othello/renderer";
 import type { DrawBoardOptions } from "./othello/renderer";
 import { runFlipAnimation, runReplayAnimation } from "./othello/animation";
-import { CELL_SIZE, PADDING } from "./othello/constants";
 
 // ═══════════════════════════════════════════════════
 //  Composable
@@ -118,17 +117,8 @@ export function useOthello() {
     const canvas = canvasRef.value;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / (rect.width * (window.devicePixelRatio || 1));
-    const scaleY = canvas.height / (rect.height * (window.devicePixelRatio || 1));
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-
-    const col = Math.floor((x - PADDING) / CELL_SIZE);
-    const row = Math.floor((y - PADDING) / CELL_SIZE);
-    if (col < 0 || col > 7 || row < 0 || row > 7) return;
-
-    const bitIndex = cellBitIndex(row, col);
+    const bitIndex = canvasToBitIndex(canvas, e);
+    if (bitIndex < 0) return;
 
     const preBlack = bb(black.value);
     const preWhite = bb(white.value);
@@ -464,4 +454,4 @@ export function useOthello() {
 
 export type { GameState, FlipAnimation, MoveRecord } from "./othello/types";
 export { CELL_SIZE, PADDING, BOARD_PX } from "./othello/constants";
-export { hasBit, cellBitIndex } from "./othello/helpers";
+export { bb, canvasToBitIndex, hasBit, cellBitIndex } from "./othello/helpers";

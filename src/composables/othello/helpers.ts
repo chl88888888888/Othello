@@ -1,3 +1,5 @@
+import { CELL_SIZE, PADDING } from "./constants";
+
 // ── BigInt Helpers ───────────────────────────────
 
 /**
@@ -19,6 +21,25 @@ export function hasBit(bits: string, index: number): boolean {
 /** Canvas (row,col) → bit index. row=0 is top of board (rank 8), row=7 is bottom (rank 1) */
 export function cellBitIndex(row: number, col: number): number {
   return (7 - row) * 8 + col;
+}
+
+/** Convert a mouse click on the board canvas to a bit index (0-63), or -1 if out of bounds */
+export function canvasToBitIndex(
+  canvas: HTMLCanvasElement,
+  e: MouseEvent,
+): number {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const scaleX = canvas.width / (rect.width * dpr);
+  const scaleY = canvas.height / (rect.height * dpr);
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+
+  const col = Math.floor((x - PADDING) / CELL_SIZE);
+  const row = Math.floor((y - PADDING) / CELL_SIZE);
+  if (col < 0 || col > 7 || row < 0 || row > 7) return -1;
+
+  return cellBitIndex(row, col);
 }
 
 // ── Easing Functions ─────────────────────────────
