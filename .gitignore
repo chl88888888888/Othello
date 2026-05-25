@@ -28,3 +28,4 @@ config.json
 keystore.properties
 local.properties
 *.safetensors
+*.code-workspace

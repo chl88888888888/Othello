@@ -279,33 +279,6 @@ mod tests {
     #[test]
     fn test_compute_flips_initial_white() {
         let (black, white) = initial_board();
-        // White at c4 (index 26) should flip d4... wait, let me think.
-        // White plays, so own=white, opponent=black
-        // c4: black has d4, e4. Looking from c4:
-        // Direction +1 (right): c4 -> d4(black) -> e4(black) -> f4(empty). Since after black pieces there's empty (not own), no flip.
-        // Actually let me think again. White plays c4, own=white, opponent=black.
-        // Direction right (+1): c4 -> d4(black) -> e4(own=white? no, e4 is black!). So: c4 -> d4(black) -> e4(black) -> f4(empty). Since it hits empty after opponents, returns 0.
-        // Wait, let me reconsider. In the initial board:
-        // Row 4 (index 24-31): a4 b4 c4 d4(white) e4(black) f4 g4 h4
-        // Row 5 (index 32-39): a5 b5 c5 d5(black) e5(white) f5 g5 h5
-        // 
-        // White plays c4 (own=white, opponent=black):
-        // Direction right: c4 -> d4(white=own) -> returns empty. No flip.
-        // Direction down-right (+9): c4(26) -> d5(35? no, 26+9=35, which is d5=black) -> e6(44, empty). Hits black then empty, no flip.
-        // Direction up-right (-7): c4(26) -> d3(26-7=19, empty). No flip.
-        // Direction down (+8): c4(26) -> c5(34, empty). No flip.
-        // Direction up (-8): c4(26) -> c3(18, empty). No flip.
-        // So c4 should have 0 flips.
-        // Let me try d3 for white instead.
-        // Actually, let me use a known legal move. For white's turn on initial board, legal moves are:
-        // c3, d3, e6, f4... no. Let me think:
-        // Black's legal moves: d3, c4, f5, e6 (these flip white pieces)
-        // White's legal moves: c3, d3? No...
-        // Actually initial board: Black pieces at d5,e4. White pieces at d4,e5.
-        // Black to move (standard rules). Black can play: d3(flip d4), c4(flip d4), f5(flip e5), e6(flip e5)
-        // White: if it were white's turn, white could play: c3(would flip d4? no, d4 is white), ...
-        // Actually from initial board, white's legal moves from standard rules: c5? No.
-        // Let me just test d3 for black.
         let pos = sq('d', 3);
         let flips = compute_flips(pos, black, white);
         assert_eq!(flips, sq('d', 4));

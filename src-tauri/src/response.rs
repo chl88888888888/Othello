@@ -3,7 +3,7 @@ use serde::Serialize;
 
 // ---------- Response struct (u64 passed as strings to avoid JS precision loss) ----------
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub struct GameStateResponse {
     pub black: String,
     pub white: String,
